@@ -1,7 +1,7 @@
 # Fly.io config — single container: Fastify serves the API and the built SPA.
 # Change `app` to a globally-unique name before `fly deploy`.
 app = "asoiaf-trend"
-primary_region = "scl"
+primary_region = "gru"
 
 [build]
 
@@ -26,7 +26,7 @@ primary_region = "scl"
     path = "/api/health"
 
 # Persistent volume — votes (data/db.json) and uploaded images survive restarts.
-# Create it once:  fly volumes create asoiaf_data --region scl --size 1
+# Create it once:  fly volumes create asoiaf_data --region gru --size 1
 [[mounts]]
   source = "asoiaf_data"
   destination = "/data"

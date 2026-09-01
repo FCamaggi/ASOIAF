@@ -10,7 +10,7 @@ on:
 
 env:
   FLY_APP: asoiaf-trend
-  FLY_REGION: scl
+  FLY_REGION: gru
   FLY_VOLUME: asoiaf_data
 
 jobs:
