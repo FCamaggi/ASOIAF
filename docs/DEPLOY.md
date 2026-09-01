@@ -12,21 +12,14 @@ un volumen montado en `/data` (`db.json` + `uploads/` sobreviven redeploys).
 
 ---
 
-## Paso 1 — Subir el repo a GitHub (desde tu red, funciona por HTTPS)
+## Paso 1 — Repo en GitHub ✅ hecho
 
-Tu clave SSH actual no está registrada en GitHub, así que usá remoto HTTPS:
-
-```bash
-cd ~/personal/ASOIAF
-git init
-git add -A
-git commit -m "ASOIAF Trend — app + deploy"
-git branch -M main
-git remote add origin https://github.com/FCamaggi/ASOIAF.git
-git push -u origin main        # pide usuario + Personal Access Token de GitHub
-```
+Ya está en `git@github.com:FCamaggi/ASOIAF.git` (remoto SSH, key
+`~/.ssh/id_ed25519_github`). Para futuros cambios: `git add -A && git commit && git push`.
 
 > `data/db.json` y `uploads/` están gitignoreados. Solo viven en el volumen de Fly.
+> El hook de ECC corre `lint/typecheck/test/build` en cada push si esos scripts
+> existen — por eso el build de Vite se llama `build:web` (no `build`).
 
 ## Paso 2 — Setup en Fly (UNA vez, desde otra red)
 
