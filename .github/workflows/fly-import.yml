@@ -25,3 +25,9 @@ jobs:
 
       - name: Import
         run: flyctl ssh console -a "$FLY_APP" --command "npm run import"
+
+      - name: Reiniciar para cargar el catálogo importado
+        run: |
+          flyctl apps restart "$FLY_APP" || true
+          sleep 6
+          curl -sS -m 40 "https://$FLY_APP.fly.dev/api/health" || true
