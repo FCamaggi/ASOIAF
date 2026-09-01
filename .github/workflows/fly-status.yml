@@ -1,0 +1,24 @@
+name: Fly Status (diagnóstico)
+
+# Corré esto a mano (Actions → Run workflow) para ver estado, IPs y logs
+# recientes sin necesitar acceso a api.fly.io desde tu red.
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: asoiaf-trend
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl status -a "$FLY_APP" || true
+      - run: flyctl ips list -a "$FLY_APP" || true
+      - run: flyctl volumes list -a "$FLY_APP" || true
+      - run: flyctl logs -a "$FLY_APP" --no-tail | tail -n 200 || true
+      - run: |
+          curl -sS -m 15 -D - "https://$FLY_APP.fly.dev/api/health" || true
+          echo
+          curl -sS -m 15 -o /tmp/root.html -w 'root: %{http_code} %{size_download}B\n' "https://$FLY_APP.fly.dev/" || true
+          head -c 800 /tmp/root.html || true

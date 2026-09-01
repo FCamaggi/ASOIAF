@@ -37,5 +37,17 @@ jobs:
               -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
           fi
 
+      - name: Asignar IPs públicas si faltan
+        run: |
+          flyctl ips allocate-v4 --shared -a "$FLY_APP" || true
+          flyctl ips allocate-v6 -a "$FLY_APP" || true
+          flyctl ips list -a "$FLY_APP"
+
       - name: Deploy
         run: flyctl deploy --remote-only --ha=false -a "$FLY_APP"
+
+      - name: Estado final
+        if: always()
+        run: |
+          flyctl status -a "$FLY_APP" || true
+          flyctl ips list -a "$FLY_APP" || true
