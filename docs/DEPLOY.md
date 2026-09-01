@@ -1,98 +1,94 @@
 # Deploy en Fly.io
 
-El build (`npm install` + `vite build`) corre en el **remote builder de Fly**, no
-en tu red — así te saltás el bloqueo de npm local. Es **un solo servicio**:
-Fastify sirve la API y la SPA compilada.
+Tu red (`lahuen-dev`) **bloquea `api.fly.io`** (probado). Por eso:
 
-## 0. Requisitos (una vez)
+- **Setup inicial (1 sola vez):** desde otra red — tu casa, hotspot del celular,
+  un Codespace, cualquier lugar con salida libre.
+- **Después:** cada `git push` a `main` redespliega solo vía **GitHub Actions**
+  (los runners de GitHub sí llegan a Fly). Nunca más necesitás flyctl local.
 
-```bash
-# instalar flyctl
-curl -L https://fly.io/install.sh | sh      # macOS/Linux
-# o: brew install flyctl
+Es **un solo servicio**: Fastify sirve la API y la SPA compilada. Persistencia en
+un volumen montado en `/data` (`db.json` + `uploads/` sobreviven redeploys).
 
-fly auth signup      # o: fly auth login
-```
+---
 
-## 1. Subir el repo a GitHub
+## Paso 1 — Subir el repo a GitHub (desde tu red, funciona por HTTPS)
+
+Tu clave SSH actual no está registrada en GitHub, así que usá remoto HTTPS:
 
 ```bash
 cd ~/personal/ASOIAF
 git init
 git add -A
-git commit -m "ASOIAF Trend — app + deploy config"
+git commit -m "ASOIAF Trend — app + deploy"
 git branch -M main
-git remote add origin git@github.com:FCamaggi/ASOIAF.git
-git push -u origin main
+git remote add origin https://github.com/FCamaggi/ASOIAF.git
+git push -u origin main        # pide usuario + Personal Access Token de GitHub
 ```
 
-> `data/db.json` y `uploads/` están en `.gitignore` — nunca se suben. Viven en el
-> volumen de Fly.
+> `data/db.json` y `uploads/` están gitignoreados. Solo viven en el volumen de Fly.
 
-## 2. Crear la app y el volumen
-
-`fly.toml` ya está en el repo. Elegí un nombre único (reemplazá `asoiaf-trend`
-en `fly.toml` y en los comandos si está tomado):
+## Paso 2 — Setup en Fly (UNA vez, desde otra red)
 
 ```bash
-fly apps create asoiaf-trend
-fly volumes create asoiaf_data --region scl --size 1    # 1 GB, sobra
+curl -L https://fly.io/install.sh | sh
+export FLYCTL_INSTALL="$HOME/.fly"
+export PATH="$FLYCTL_INSTALL/bin:$PATH"
+
+fly auth login
+
+cd ASOIAF                      # clon del repo, o la carpeta con fly.toml/Dockerfile
+fly apps create asoiaf-trend                 # nombre único; si está tomado, cambialo también en fly.toml
+fly volumes create asoiaf_data --region scl --size 1
+fly deploy                                   # primer build + arranque
+
+# token para que GitHub Actions pueda deployar después:
+fly tokens create deploy -x 8760h            # 1 año; copialo entero (empieza con "FlyV1 ...")
 ```
 
-## 3. Deploy
+La app queda en `https://asoiaf-trend.fly.dev`.
 
-```bash
-fly deploy
-```
+## Paso 3 — Conectar GitHub Actions (desde tu red)
 
-Fly sube el contexto, construye la imagen (Dockerfile), y arranca. En el primer
-boot el contenedor corre `npm run seed` (crea `/data/db.json` con las 17
-categorías curadas) y levanta el server.
+En GitHub: repo **ASOIAF → Settings → Secrets and variables → Actions → New repository secret**
 
-URL: `https://asoiaf-trend.fly.dev` — se la pasás a la otra persona.
+- Name: `FLY_API_TOKEN`
+- Value: el token del paso anterior
 
-## 4. Ampliar el catálogo con las APIs (opcional)
-
-Los importadores necesitan salida a internet desde el contenedor (la tiene):
-
-```bash
-fly ssh console
-npm run import        # AIOIAF personajes/casas + AWOIAF dragones/batallas/lugares
-exit
-```
-
-Los datos importados quedan en el volumen. Es idempotente.
-
-## 5. Actualizar
+Listo. Desde ahora:
 
 ```bash
 git add -A && git commit -m "cambios" && git push
-fly deploy
 ```
 
-Cada deploy vuelve a correr `npm run seed`: reconstruye el catálogo desde el
-código y **conserva** votos y fotos (solo descarta elecciones que apunten a
-opciones que ya no existen).
+y `.github/workflows/fly-deploy.yml` redespliega. También podés dispararlo a mano
+en la pestaña **Actions**.
+
+---
+
+## Ampliar el catálogo con las APIs externas
+
+`api.fly.io` está bloqueado en tu red, así que no podés hacer `fly ssh` local.
+Usá el workflow: **Actions → "Fly Import (catálogo externo)" → Run workflow**.
+Corre `npm run import` dentro de la máquina en Fly (AIOIAF + AWOIAF). Idempotente.
 
 ## Operación
 
-| Acción | Comando |
+| Acción | Cómo |
 | --- | --- |
-| Logs en vivo | `fly logs` |
-| Estado | `fly status` |
-| Consola en el contenedor | `fly ssh console` |
-| Ver/backup del db.json | `fly ssh console -C "cat /data/db.json"` |
-| Reiniciar | `fly apps restart asoiaf-trend` |
-| Mantener 1 sola máquina | `fly scale count 1` (el volumen es de una máquina) |
+| Redeploy | `git push` a main, o Actions → Fly Deploy → Run |
+| Importar canon | Actions → Fly Import → Run |
+| Logs | `fly logs` (desde una red con acceso) o el dashboard de Fly |
+| Backup del db.json | `fly ssh console -C "cat /data/db.json"` (otra red) |
+| 1 sola máquina | `fly scale count 1` — el volumen pertenece a una máquina |
 
 ## Notas
 
 - `auto_stop_machines`: la máquina se apaga sin tráfico y arranca sola en la
-  siguiente request (cold start de segundos). La pantalla "Esperando a los
-  cuervos" y la carga inicial lo disimulan. Si molesta: `min_machines_running = 1`
-  en `fly.toml`.
-- Sin auth: cualquiera con la URL puede votar como Jugador A o B. Es una app
-  privada para dos; si la compartís más, agregá un PIN por jugador (ver
-  `docs/BACKLOG.md`).
-- Costo: 1 máquina `shared-cpu-1x/512MB` que escala a 0 + 1 GB de volumen entra
-  en el tramo gratuito / muy bajo de Fly para este uso.
+  próxima request (cold start de segundos). Si molesta, poné
+  `min_machines_running = 1` en `fly.toml`.
+- Sin auth: cualquiera con la URL vota como Jugador A o B. App privada para dos.
+- Costo: 1× `shared-cpu-1x/512MB` que escala a 0 + 1 GB de volumen → tramo
+  gratuito / centavos de Fly para este uso.
+- El `Dockerfile` usa `npm install` (no `npm ci`) a propósito: no hace falta
+  commitear un lockfile (que no podés generar sin red).
