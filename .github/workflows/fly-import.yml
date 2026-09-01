@@ -8,8 +8,8 @@ on:
 jobs:
   import:
     runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl ssh console --command "npm run import"
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      - run: flyctl ssh console -a asoiaf-trend --command "npm run import"

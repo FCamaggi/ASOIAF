@@ -1,69 +1,65 @@
 # Deploy en Fly.io
 
-Tu red (`lahuen-dev`) **bloquea `api.fly.io`** (probado). Por eso:
+Tu red (`lahuen-dev`) **bloquea `api.fly.io` y `web.fly.io`** (probado). Solo
+llegan `fly.io` y `api.machines.dev`. Por eso:
 
-- **Setup inicial (1 sola vez):** desde otra red — tu casa, hotspot del celular,
-  un Codespace, cualquier lugar con salida libre.
-- **Después:** cada `git push` a `main` redespliega solo vía **GitHub Actions**
-  (los runners de GitHub sí llegan a Fly). Nunca más necesitás flyctl local.
+- **flyctl local y el dashboard de Fly NO te sirven desde esta red.**
+- **Todo el deploy corre en GitHub Actions** (los runners de GitHub sí llegan a
+  Fly). El workflow crea la app, el volumen y deploya.
+- Lo único que necesitás desde una red que llegue a Fly (tu **celular con datos
+  móviles** alcanza): **crear la cuenta y generar un Access Token.**
 
-Es **un solo servicio**: Fastify sirve la API y la SPA compilada. Persistencia en
-un volumen montado en `/data` (`db.json` + `uploads/` sobreviven redeploys).
+Es **un solo servicio**: Fastify sirve la API y la SPA. Persistencia en un
+volumen montado en `/data` (`db.json` + `uploads/` sobreviven redeploys).
 
 ---
 
 ## Paso 1 — Repo en GitHub ✅ hecho
 
-Ya está en `git@github.com:FCamaggi/ASOIAF.git` (remoto SSH, key
-`~/.ssh/id_ed25519_github`). Para futuros cambios: `git add -A && git commit && git push`.
+`git@github.com:FCamaggi/ASOIAF.git` (remoto SSH, key `~/.ssh/id_ed25519_github`).
+Cambios futuros: `git add -A && git commit && git push`.
 
-> `data/db.json` y `uploads/` están gitignoreados. Solo viven en el volumen de Fly.
 > El hook de ECC corre `lint/typecheck/test/build` en cada push si esos scripts
-> existen — por eso el build de Vite se llama `build:web` (no `build`).
+> existen — por eso el build de Vite se llama `build:web`, no `build`.
 
-## Paso 2 — Setup en Fly (UNA vez, desde otra red)
+## Paso 2 — Cuenta Fly + token (desde el celular con datos móviles, o cualquier red libre)
 
-```bash
-curl -L https://fly.io/install.sh | sh
-export FLYCTL_INSTALL="$HOME/.fly"
-export PATH="$FLYCTL_INSTALL/bin:$PATH"
+1. Entrá a **fly.io** → Sign up (podés usar "Sign up with GitHub").
+2. Dashboard → **Tokens** (o *Account → Access Tokens*) → **Create token**.
+   Elegí un token de organización (amplio) — la Action necesita crear la app y el
+   volumen, no solo deployar. Copialo entero (empieza con `FlyV1 ...`).
+3. Fly puede pedir una tarjeta para habilitar la org aunque el uso quede en el
+   tramo gratuito.
 
-fly auth login
+## Paso 3 — Cargar el token en GitHub (desde tu red)
 
-cd ASOIAF                      # clon del repo, o la carpeta con fly.toml/Dockerfile
-fly apps create asoiaf-trend                 # nombre único; si está tomado, cambialo también en fly.toml
-fly volumes create asoiaf_data --region scl --size 1
-fly deploy                                   # primer build + arranque
-
-# token para que GitHub Actions pueda deployar después:
-fly tokens create deploy -x 8760h            # 1 año; copialo entero (empieza con "FlyV1 ...")
-```
-
-La app queda en `https://asoiaf-trend.fly.dev`.
-
-## Paso 3 — Conectar GitHub Actions (desde tu red)
-
-En GitHub: repo **ASOIAF → Settings → Secrets and variables → Actions → New repository secret**
+Repo **ASOIAF → Settings → Secrets and variables → Actions → New repository secret**
 
 - Name: `FLY_API_TOKEN`
-- Value: el token del paso anterior
+- Value: el token
 
-Listo. Desde ahora:
+## Paso 4 — Deploy
 
-```bash
-git add -A && git commit -m "cambios" && git push
-```
+Se dispara solo con el próximo `git push` a `main`, o a mano en
+**Actions → "Fly Deploy" → Run workflow**.
 
-y `.github/workflows/fly-deploy.yml` redespliega. También podés dispararlo a mano
-en la pestaña **Actions**.
+El workflow:
+1. crea la app `asoiaf-trend` si no existe,
+2. crea el volumen `asoiaf_data` (región `scl`, 1 GB) si no existe,
+3. `flyctl deploy --remote-only --ha=false`.
+
+En el primer boot el contenedor corre `npm run seed` (crea `/data/db.json`).
+URL: `https://asoiaf-trend.fly.dev`.
+
+> Nombre `asoiaf-trend` tomado? Cambialo en `fly.toml` **y** en el `env:` de
+> `.github/workflows/fly-deploy.yml`.
 
 ---
 
 ## Ampliar el catálogo con las APIs externas
 
-`api.fly.io` está bloqueado en tu red, así que no podés hacer `fly ssh` local.
-Usá el workflow: **Actions → "Fly Import (catálogo externo)" → Run workflow**.
-Corre `npm run import` dentro de la máquina en Fly (AIOIAF + AWOIAF). Idempotente.
+**Actions → "Fly Import (catálogo externo)" → Run workflow.** Corre
+`npm run import` dentro de la máquina en Fly (AIOIAF + AWOIAF). Idempotente.
 
 ## Operación
 
@@ -71,17 +67,14 @@ Corre `npm run import` dentro de la máquina en Fly (AIOIAF + AWOIAF). Idempoten
 | --- | --- |
 | Redeploy | `git push` a main, o Actions → Fly Deploy → Run |
 | Importar canon | Actions → Fly Import → Run |
-| Logs | `fly logs` (desde una red con acceso) o el dashboard de Fly |
-| Backup del db.json | `fly ssh console -C "cat /data/db.json"` (otra red) |
-| 1 sola máquina | `fly scale count 1` — el volumen pertenece a una máquina |
+| Logs / consola / backup | necesitan `api.fly.io` → desde el celular o el dashboard con datos móviles: `fly logs -a asoiaf-trend`, `fly ssh console -a asoiaf-trend -C "cat /data/db.json"` |
 
 ## Notas
 
-- `auto_stop_machines`: la máquina se apaga sin tráfico y arranca sola en la
-  próxima request (cold start de segundos). Si molesta, poné
-  `min_machines_running = 1` en `fly.toml`.
+- `auto_stop_machines` (fly.toml): la máquina se apaga sin tráfico y arranca sola
+  en la próxima request (cold start de segundos). Si molesta:
+  `min_machines_running = 1`.
+- `--ha=false`: una sola máquina (el volumen pertenece a una máquina).
 - Sin auth: cualquiera con la URL vota como Jugador A o B. App privada para dos.
-- Costo: 1× `shared-cpu-1x/512MB` que escala a 0 + 1 GB de volumen → tramo
-  gratuito / centavos de Fly para este uso.
-- El `Dockerfile` usa `npm install` (no `npm ci`) a propósito: no hace falta
-  commitear un lockfile (que no podés generar sin red).
+- El `Dockerfile` usa `npm install` (no `npm ci`): no hace falta commitear
+  lockfile.

@@ -1,11 +1,17 @@
 name: Fly Deploy
 
-# Redeploys en cada push a main — corre en los runners de GitHub (con red a
-# api.fly.io), así no necesitás flyctl ni acceso a Fly desde tu red.
+# Todo corre en los runners de GitHub (que sí llegan a api.fly.io).
+# Desde tu red solo necesitás: cuenta en Fly + un Access Token en el secret
+# FLY_API_TOKEN. Este workflow crea la app y el volumen si no existen, y deploya.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+env:
+  FLY_APP: asoiaf-trend
+  FLY_REGION: scl
+  FLY_VOLUME: asoiaf_data
 
 jobs:
   deploy:
@@ -13,9 +19,23 @@ jobs:
     concurrency:
       group: fly-deploy
       cancel-in-progress: false
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Crear la app si no existe
+        run: |
+          flyctl apps list | grep -qw "$FLY_APP" || \
+            flyctl apps create "$FLY_APP" --org personal
+
+      - name: Crear el volumen si no existe
+        run: |
+          if ! flyctl volumes list -a "$FLY_APP" | grep -qw "$FLY_VOLUME"; then
+            flyctl volumes create "$FLY_VOLUME" \
+              -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
+          fi
+
+      - name: Deploy
+        run: flyctl deploy --remote-only --ha=false -a "$FLY_APP"
