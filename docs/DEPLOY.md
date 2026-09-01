@@ -45,7 +45,8 @@ Se dispara solo con el próximo `git push` a `main`, o a mano en
 
 El workflow:
 1. crea la app `asoiaf-trend` si no existe,
-2. crea el volumen `asoiaf_data` (región `gru` = São Paulo, 1 GB) si no existe,
+2. destruye la máquina anterior y crea el volumen `asoiaf_data` (región `eze` =
+   Buenos Aires, 1 GB) si no existe — recreación limpia para evitar hosts llenos,
 3. `flyctl deploy --remote-only --ha=false`.
 
 En el primer boot el contenedor corre `npm run seed` (crea `/data/db.json`).

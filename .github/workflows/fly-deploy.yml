@@ -1,8 +1,8 @@
 name: Fly Deploy
 
-# Todo corre en los runners de GitHub (que sí llegan a api.fly.io).
-# Desde tu red solo necesitás: cuenta en Fly + un Access Token en el secret
-# FLY_API_TOKEN. Este workflow crea la app y el volumen si no existen, y deploya.
+# Todo corre en runners de GitHub (que llegan a api.fly.io).
+# Estrategia: destruir la máquina y recrearla en cada deploy. Evita el error
+# "insufficient CPUs on the current host" (update in-place sobre un host lleno).
 on:
   push:
     branches: [main]
@@ -10,7 +10,7 @@ on:
 
 env:
   FLY_APP: asoiaf-trend
-  FLY_REGION: gru
+  FLY_REGION: eze          # Buenos Aires. Si falla por capacidad: gig, bog, qro o mia
   FLY_VOLUME: asoiaf_data
 
 jobs:
@@ -26,16 +26,27 @@ jobs:
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
       - name: Crear la app si no existe
-        run: |
-          flyctl apps list | grep -qw "$FLY_APP" || \
-            flyctl apps create "$FLY_APP" --org personal
+        run: flyctl apps list | grep -qw "$FLY_APP" || flyctl apps create "$FLY_APP" --org personal
 
-      - name: Crear el volumen si no existe
+      - name: Destruir máquinas existentes (recreación limpia)
         run: |
-          if ! flyctl volumes list -a "$FLY_APP" | grep -qw "$FLY_VOLUME"; then
-            flyctl volumes create "$FLY_VOLUME" \
-              -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
+          for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[].id // empty'); do
+            echo "destruyendo $m"
+            flyctl machine destroy "$m" -a "$FLY_APP" --force || true
+          done
+
+      - name: Volumen en $FLY_REGION
+        run: |
+          # borrar volúmenes en otra región (p.ej. gru viejo)
+          for v in $(flyctl volumes list -a "$FLY_APP" --json | jq -r --arg r "$FLY_REGION" '.[] | select(.region != $r) | .id // empty'); do
+            echo "borrando volumen fuera de región: $v"
+            flyctl volumes destroy "$v" -a "$FLY_APP" --yes || true
+          done
+          COUNT=$(flyctl volumes list -a "$FLY_APP" --json | jq -r --arg r "$FLY_REGION" '[.[] | select(.region == $r)] | length')
+          if [ "${COUNT:-0}" -lt 1 ]; then
+            flyctl volumes create "$FLY_VOLUME" -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
           fi
+          flyctl volumes list -a "$FLY_APP"
 
       - name: Asignar IPs públicas si faltan
         run: |
