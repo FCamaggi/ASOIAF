@@ -9,6 +9,7 @@ interface Props {
   b: User;
   index: number;
   total: number;
+  categoryLabel: string;
 }
 
 /**
@@ -20,8 +21,9 @@ interface Props {
  *   └───────────────┴───────────────┘
  * with the category label pinned to the centre and a crimson frame on a match.
  */
-const TrendCard = forwardRef<HTMLDivElement, Props>(({ row, a, b, index, total }, ref) => {
-  const { category, a: aOpt, b: bOpt, match } = row;
+const TrendCard = forwardRef<HTMLDivElement, Props>(
+  ({ row, a, b, index, total, categoryLabel }, ref) => {
+    const { a: aOpt, b: bOpt, match } = row;
 
   return (
     <div
@@ -49,7 +51,7 @@ const TrendCard = forwardRef<HTMLDivElement, Props>(({ row, a, b, index, total }
       <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
         <div className="rounded border border-primary/70 bg-obsidian-black/85 px-3 py-1.5 text-center backdrop-blur-sm">
           <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
-            {category.label}
+            {categoryLabel}
           </span>
         </div>
       </div>
@@ -64,16 +66,17 @@ const TrendCard = forwardRef<HTMLDivElement, Props>(({ row, a, b, index, total }
         </span>
       </div>
 
-      {match && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-targaryen-crimson px-3 py-1">
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-on-surface">
-            ♥ Match
-          </span>
-        </div>
-      )}
-    </div>
-  );
-});
+        {match && (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-targaryen-crimson px-3 py-1">
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-on-surface">
+              ♥ Match
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  },
+);
 
 TrendCard.displayName = 'TrendCard';
 export default TrendCard;
@@ -83,7 +86,7 @@ function PlayerCell({ user, side }: { user: User; side: 'A' | 'B' }) {
     <div className="relative flex flex-col items-center justify-center gap-2 border-b border-valyrian-steel/15 bg-surface-container-low/60 p-3">
       <PlayerAvatar user={user} size={68} />
       <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-primary/80">
-        Jugador {side}
+        Player {side}
       </span>
       <span className="text-center font-serif text-[14px] leading-tight text-on-surface">
         {user.displayName}

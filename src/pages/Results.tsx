@@ -4,6 +4,7 @@ import { toPng } from 'html-to-image';
 import type { Comparison } from '../../shared/types.ts';
 import { api } from '../api.ts';
 import { fileToOptionImageDataUrl } from '../lib/image.ts';
+import { catLabel, useLang, useT } from '../lib/i18n.ts';
 import AppShell from '../components/AppShell.tsx';
 import TrendCard from '../components/TrendCard.tsx';
 import Raven from '../components/Raven.tsx';
@@ -14,6 +15,8 @@ export default function Results() {
   const [i, setI] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [imgBusy, setImgBusy] = useState<string | null>(null);
+  const [lang] = useLang();
+  const t = useT();
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const refresh = () => api.comparison().then(setCmp);
@@ -30,7 +33,7 @@ export default function Results() {
       await api.setChoiceImage(slug, categorySlug, dataUrl);
       await refresh();
     } catch (e: any) {
-      setErr(e.message ?? 'No se pudo actualizar la imagen');
+      setErr(e.message ?? t.errorImage);
     } finally {
       setImgBusy(null);
     }
@@ -43,35 +46,33 @@ export default function Results() {
 
   if (err) {
     return (
-      <AppShell title="Resultados">
+      <AppShell title={t.hdrVerdict}>
         <p className="pt-stack-lg text-center text-error">{err}</p>
       </AppShell>
     );
   }
   if (!cmp) {
     return (
-      <AppShell title="Resultados">
-        <Raven label="Reuniendo los cuervos…" />
+      <AppShell title={t.hdrVerdict}>
+        <Raven label={t.gatheringRavens} />
       </AppShell>
     );
   }
 
   if (!cmp.bothComplete) {
+    const doneWho = cmp.aComplete ? 'Player A' : 'Player B';
+    const missingWho = cmp.aComplete ? 'Player B' : 'Player A';
     return (
-      <AppShell title="Resultados">
+      <AppShell title={t.hdrVerdict}>
         <div className="flex flex-col items-center gap-stack-md pt-stack-lg text-center">
           <span className="material-symbols-outlined text-[40px] text-primary">lock</span>
-          <h1 className="font-serif text-[28px] font-bold text-dragon-gold">
-            El veredicto sigue sellado
-          </h1>
+          <h1 className="font-serif text-[28px] font-bold text-dragon-gold">{t.stillSealed}</h1>
           <p className="max-w-[22rem] text-[14px] text-on-surface-variant">
-            {cmp.aComplete ? 'Jugador A' : 'Jugador B'} ya terminó.{' '}
-            {cmp.aComplete && cmp.bComplete
-              ? ''
-              : `Falta que ${cmp.aComplete ? 'Jugador B' : 'Jugador A'} complete las ${cmp.total} categorías.`}
+            {t.someoneFinished(doneWho)}{' '}
+            {cmp.aComplete && cmp.bComplete ? '' : t.missingOther(missingWho, cmp.total)}
           </p>
           <Link to="/vote" className="btn-ghost-gold">
-            Ir a elegir
+            {t.goVote}
           </Link>
         </div>
       </AppShell>
@@ -83,11 +84,7 @@ export default function Results() {
   async function download(index: number) {
     const node = cardRefs.current[index];
     if (!node) return;
-    const dataUrl = await toPng(node, {
-      pixelRatio: 2,
-      backgroundColor: '#1A1A1A',
-      cacheBust: true,
-    });
+    const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: '#1A1A1A', cacheBust: true });
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = `asoiaf-${String(index + 1).padStart(2, '0')}-${cmp!.rows[index].category.slug}.png`;
@@ -107,19 +104,16 @@ export default function Results() {
   }
 
   return (
-    <AppShell title="Resultados">
+    <AppShell title={t.hdrVerdict}>
       <header className="text-center">
         <h1 className="font-serif text-[38px] font-bold uppercase leading-none text-dragon-gold drop-shadow-[0_2px_10px_rgba(255,215,0,0.25)]">
-          El Veredicto
+          {t.theVerdict}
         </h1>
         <p className="mt-stack-sm text-[14px] text-on-surface-variant">
-          {matches === 0
-            ? 'Dos caminos, ninguna lealtad compartida.'
-            : `${matches} de ${cmp.total} lealtades compartidas.`}
+          {matches === 0 ? t.noSharedLoyalty : t.sharedLoyalties(matches, cmp.total)}
         </p>
       </header>
 
-      {/* stepper */}
       <div className="mt-stack-md flex items-center justify-between">
         <button
           type="button"
@@ -152,13 +146,18 @@ export default function Results() {
           b={cmp.users.b}
           index={i}
           total={cmp.total}
+          categoryLabel={catLabel(row.category, lang)}
         />
       </div>
 
       <div className="mt-stack-md flex flex-col gap-2">
-        <button type="button" className="btn-solid-gold flex items-center justify-center gap-2" onClick={() => download(i)}>
+        <button
+          type="button"
+          className="btn-solid-gold flex items-center justify-center gap-2"
+          onClick={() => download(i)}
+        >
           <span className="material-symbols-outlined text-[16px]">download</span>
-          Descargar esta categoría
+          {t.downloadThis}
         </button>
         <button
           type="button"
@@ -167,29 +166,29 @@ export default function Results() {
           onClick={downloadAll}
         >
           <span className="material-symbols-outlined text-[16px]">photo_library</span>
-          {downloading ? 'Generando…' : `Descargar las ${cmp.total}`}
+          {downloading ? t.generating : t.downloadAll(cmp.total)}
         </button>
       </div>
 
-      {/* per-pick image override */}
       <div className="mt-stack-md grid grid-cols-2 gap-gutter">
         <ImageEditor
-          label={cmp.users.a?.displayName ?? 'Jugador A'}
+          label={cmp.users.a?.displayName ?? 'Player A'}
           has={!!row.aImageUrl}
           busy={imgBusy === `a:${row.category.slug}`}
           disabled={!row.a}
+          t={t}
           onPick={(f) => replaceImage('a', row.category.slug, f)}
         />
         <ImageEditor
-          label={cmp.users.b?.displayName ?? 'Jugador B'}
+          label={cmp.users.b?.displayName ?? 'Player B'}
           has={!!row.bImageUrl}
           busy={imgBusy === `b:${row.category.slug}`}
           disabled={!row.b}
+          t={t}
           onPick={(f) => replaceImage('b', row.category.slug, f)}
         />
       </div>
 
-      {/* off-screen render of every card so "descargar todas" works without stepping */}
       <div className="pointer-events-none fixed left-[-9999px] top-0" aria-hidden>
         {cmp.rows.map((r, k) =>
           k === i ? null : (
@@ -203,19 +202,19 @@ export default function Results() {
               b={cmp.users.b}
               index={k}
               total={cmp.total}
+              categoryLabel={catLabel(r.category, lang)}
             />
           ),
         )}
       </div>
 
       <p className="mt-2 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-on-surface-variant/40">
-        La imagen reemplaza el monograma en la tarjeta de esta categoría
+        {t.imageReplacesNote}
       </p>
 
-      {/* full ledger */}
       <div className="mt-stack-lg">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.16em] text-on-surface-variant/60">
-          Pergamino completo
+          {t.fullScroll}
         </h2>
         <ul className="mt-2 divide-y divide-outline-variant/30">
           {cmp.rows.map((r, k) => (
@@ -230,7 +229,7 @@ export default function Results() {
                 </span>
                 <span className="flex-1">
                   <span className="block font-mono text-[9px] uppercase tracking-[0.12em] text-on-surface-variant/50">
-                    {r.category.label}
+                    {catLabel(r.category, lang)}
                   </span>
                   <span className="block text-[13px] text-on-surface">
                     {r.a?.name ?? '—'}
@@ -240,7 +239,7 @@ export default function Results() {
                 </span>
                 {r.match && (
                   <span className="rounded-full bg-targaryen-crimson px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.12em]">
-                    match
+                    {t.match}
                   </span>
                 )}
               </button>
@@ -257,18 +256,20 @@ function ImageEditor({
   has,
   busy,
   disabled,
+  t,
   onPick,
 }: {
   label: string;
   has: boolean;
   busy: boolean;
   disabled: boolean;
+  t: ReturnType<typeof useT>;
   onPick: (file: File | null) => void;
 }) {
   return (
     <div className="flex flex-col gap-1.5 rounded border border-valyrian-steel/20 p-2.5">
       <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-on-surface-variant/60">
-        Imagen · {label}
+        {t.imageFor(label)}
       </span>
       <label
         className={`btn-outline flex cursor-pointer items-center justify-center gap-1.5 !py-2 ${
@@ -278,7 +279,7 @@ function ImageEditor({
         <span className="material-symbols-outlined text-[15px]">
           {busy ? 'hourglass_top' : 'image'}
         </span>
-        {busy ? '…' : has ? 'Cambiar' : 'Subir'}
+        {busy ? '…' : has ? t.change : t.upload}
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp"
@@ -297,7 +298,7 @@ function ImageEditor({
           className="font-mono text-[9px] uppercase tracking-[0.1em] text-on-surface-variant/50 hover:text-error"
           onClick={() => onPick(null)}
         >
-          Quitar
+          {t.remove}
         </button>
       )}
     </div>

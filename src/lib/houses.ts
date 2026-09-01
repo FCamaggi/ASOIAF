@@ -20,15 +20,15 @@ const HOUSES: Record<string, HouseStyle> = {
   arryn: { label: 'Arryn', accent: '#8FC0EA', deep: '#12202c', glyph: '☾' },
   bolton: { label: 'Bolton', accent: '#B24444', deep: '#241010', glyph: '✜' },
   frey: { label: 'Frey', accent: '#8C93A0', deep: '#1a1c20', glyph: '⛨' },
-  whitewalkers: { label: 'Los Otros', accent: '#7FD8E8', deep: '#0e2226', glyph: '❄' },
-  wildling: { label: 'Pueblo Libre', accent: '#A7B0B8', deep: '#1a1d1f', glyph: '⤬' },
+  whitewalkers: { label: 'White Walkers', accent: '#7FD8E8', deep: '#0e2226', glyph: '❄' },
+  wildling: { label: 'Free Folk', accent: '#A7B0B8', deep: '#1a1d1f', glyph: '⤬' },
   clegane: { label: 'Clegane', accent: '#B98A5E', deep: '#211810', glyph: '☗' },
   baelish: { label: 'Baelish', accent: '#86B49A', deep: '#132019', glyph: '⌘' },
   tarly: { label: 'Tarly', accent: '#9C6B3F', deep: '#20140b', glyph: '✣' },
 };
 
 export const NEUTRAL: HouseStyle = {
-  label: 'Poniente',
+  label: 'Westeros',
   accent: '#99907c',
   deep: '#1a1a1a',
   glyph: '✦',
@@ -43,7 +43,11 @@ export function initials(name: string): string {
   const words = name
     .replace(/["'“”‘’.,—–-]/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length > 1 && !['de', 'la', 'el', 'y', 'del', '&'].includes(w.toLowerCase()));
+    .filter(
+      (w) =>
+        w.length > 1 &&
+        !['de', 'la', 'el', 'y', 'del', 'of', 'the', 'and', 'house'].includes(w.toLowerCase()),
+    );
   if (words.length === 0) return name.slice(0, 2).toUpperCase();
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();

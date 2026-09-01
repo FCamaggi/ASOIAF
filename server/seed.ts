@@ -8,7 +8,9 @@ db.catalogue = {
   categories: categories.map((c) => ({
     slug: c.slug,
     label: c.label,
+    labelEs: c.labelEs,
     prompt: c.prompt,
+    promptEs: c.promptEs,
     optionType: c.optionType,
     sortOrder: c.sortOrder,
   })),

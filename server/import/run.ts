@@ -2,6 +2,7 @@ import { load, save, type DB } from '../db.ts';
 import type { Option } from '../../shared/types.ts';
 import { importCharacters, importHouses } from './aioiaf.ts';
 import { importBattles, importDragons, importPlaces } from './awoiaf.ts';
+import { importImages } from './images.ts';
 
 /**
  * Enriches the curated catalogue with encyclopedic entities pulled once from
@@ -79,7 +80,7 @@ appendToCategory('lugar-favorito', places.map((p) => p.id));
 
 save(db);
 
-console.log('Import complete:', {
+console.log('Data import complete:', {
   charactersFetched: characters.length,
   housesFetched: houses.length,
   dragonsFetched: dragons.length,
@@ -88,3 +89,6 @@ console.log('Import complete:', {
   newOptionsAdded: addedOptions,
   totalOptions: db.catalogue.options.length,
 });
+
+// Portraits (ThronesAPI) + sigils/places/dragons (Wikimedia Commons) → uploads/
+await importImages();

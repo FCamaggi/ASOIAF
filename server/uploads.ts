@@ -41,6 +41,15 @@ export function writeUpload(prefix: string, dataUrl: string): string | null {
   return `${UPLOAD_ROUTE}/${name}`;
 }
 
+/** Persist an already-fetched image buffer (used by the image importer). */
+export function writeUploadBuffer(prefix: string, buffer: Buffer, ext: string): string {
+  ensureUploadDir();
+  removeByPrefix(prefix);
+  const name = `${prefix}-${Date.now()}.${ext}`;
+  writeFileSync(join(UPLOAD_DIR, name), buffer);
+  return `${UPLOAD_ROUTE}/${name}`;
+}
+
 export function removeByPrefix(prefix: string): void {
   if (!existsSync(UPLOAD_DIR)) return;
   for (const f of readdirSync(UPLOAD_DIR)) {

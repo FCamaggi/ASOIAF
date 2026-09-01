@@ -31,11 +31,15 @@ export interface User {
 
 export interface Category {
   slug: string;
-  label: string;
+  label: string; // English (default)
+  labelEs: string | null; // Spanish override
   prompt: string;
+  promptEs: string | null;
   optionType: OptionType;
   sortOrder: number;
 }
+
+export type Lang = 'en' | 'es';
 
 export interface Option {
   id: string; // slug, unique

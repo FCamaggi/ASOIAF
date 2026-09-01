@@ -1,4 +1,4 @@
-export default function Raven({ label = 'Despertando a los cuervos…' }: { label?: string }) {
+export default function Raven({ label = 'Waking the ravens…' }: { label?: string }) {
   return (
     <div className="flex flex-col items-center gap-stack-md py-stack-lg">
       <svg

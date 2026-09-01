@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { User } from '../../shared/types.ts';
 import { api } from '../api.ts';
 import { setPlayer, usePlayer, type PlayerSlug } from '../store.ts';
+import { useT } from '../lib/i18n.ts';
 import AppShell from '../components/AppShell.tsx';
 import PlayerAvatar from '../components/PlayerAvatar.tsx';
 import { fileToAvatarDataUrl } from '../lib/image.ts';
@@ -12,6 +13,7 @@ export default function Welcome() {
   const [player] = usePlayer();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,20 +28,20 @@ export default function Welcome() {
       const updated = await api.setPhoto(slug, dataUrl);
       setUsers((prev) => prev.map((u) => (u.slug === slug ? updated : u)));
     } catch (e: any) {
-      setError(e.message ?? 'No se pudo subir la imagen');
+      setError(e.message ?? 'Upload failed');
     } finally {
       setBusy(null);
     }
   }
 
   return (
-    <AppShell title="Home">
+    <AppShell title={t.hdrHome}>
       <section className="flex flex-col items-center text-center">
         <h1 className="font-serif text-[40px] font-bold leading-tight text-dragon-gold">
-          ¿Quién eres?
+          {t.whoAreYou}
         </h1>
         <p className="mt-stack-sm max-w-[22rem] text-[15px] text-on-surface-variant">
-          Elige tu estandarte. La lealtad se forja antes de la batalla.
+          {t.chooseBanner}
         </p>
       </section>
 
@@ -48,26 +50,20 @@ export default function Welcome() {
           <PlayerPick
             key={u.slug}
             user={u}
-            slug={u.slug as PlayerSlug}
             active={player === u.slug}
             busy={busy === u.slug}
+            uploadLabel={u.photoUrl ? t.changePhoto : t.uploadPhoto}
             onChoose={() => setPlayer(u.slug as PlayerSlug)}
             onUpload={(f) => upload(u.slug as PlayerSlug, f)}
           />
         ))}
       </div>
 
-      {error && (
-        <p className="mt-stack-md text-center text-[13px] text-error">{error}</p>
-      )}
+      {error && <p className="mt-stack-md text-center text-[13px] text-error">{error}</p>}
 
       <div className="mt-stack-lg flex flex-col items-center gap-2 text-center">
-        <span className="material-symbols-outlined text-[20px] text-on-surface-variant/70">
-          lock
-        </span>
-        <p className="max-w-[20rem] text-[13px] text-on-surface-variant/70">
-          Tus votos se mantienen en secreto hasta que ambos terminen.
-        </p>
+        <span className="material-symbols-outlined text-[20px] text-on-surface-variant/70">lock</span>
+        <p className="max-w-[20rem] text-[13px] text-on-surface-variant/70">{t.secretNote}</p>
       </div>
 
       <button
@@ -76,7 +72,7 @@ export default function Welcome() {
         onClick={() => navigate('/vote')}
         className="btn-ghost-gold mt-stack-lg flex w-full items-center justify-center gap-2"
       >
-        Empezar mi camino
+        {t.begin}
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
       </button>
     </AppShell>
@@ -85,16 +81,16 @@ export default function Welcome() {
 
 function PlayerPick({
   user,
-  slug,
   active,
   busy,
+  uploadLabel,
   onChoose,
   onUpload,
 }: {
   user: User;
-  slug: PlayerSlug;
   active: boolean;
   busy: boolean;
+  uploadLabel: string;
   onChoose: () => void;
   onUpload: (f: File) => void;
 }) {
@@ -139,7 +135,7 @@ function PlayerPick({
       <div className="text-center">
         <p className="font-serif text-[19px] font-semibold text-on-surface">{user.displayName}</p>
         <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/60">
-          {user.photoUrl ? 'Cambiar foto' : 'Subir foto'}
+          {uploadLabel}
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { usePlayer } from '../store.ts';
+import { useLang, useT } from '../lib/i18n.ts';
 
 interface Props {
   title: string;
@@ -11,6 +12,8 @@ interface Props {
 
 export default function AppShell({ title, children, bare = false }: Props) {
   const [player, setPlayer] = usePlayer();
+  const [lang, setLang] = useLang();
+  const t = useT();
   const navigate = useNavigate();
 
   return (
@@ -20,26 +23,35 @@ export default function AppShell({ title, children, bare = false }: Props) {
       <header className="fixed top-0 z-50 w-full border-b border-outline-variant/40 bg-surface/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-story items-center justify-between px-margin-mobile">
           <div className="flex items-center gap-stack-sm">
-            <span className="material-symbols-outlined text-[22px] text-primary">
-              shield
-            </span>
+            <span className="material-symbols-outlined text-[22px] text-primary">shield</span>
             <span className="font-serif text-[20px] font-semibold uppercase tracking-tight text-dragon-gold">
               {title}
             </span>
           </div>
-          {player && (
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                setPlayer(null);
-                navigate('/');
-              }}
-              className="flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-primary"
+              onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
+              className="rounded-full border border-valyrian-steel/30 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-on-surface-variant/80"
+              aria-label="language"
             >
-              {player === 'jugador-a' ? 'Jugador A' : 'Jugador B'}
-              <span className="material-symbols-outlined text-[14px]">logout</span>
+              {lang === 'en' ? 'EN' : 'ES'}
             </button>
-          )}
+            {player && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPlayer(null);
+                  navigate('/');
+                }}
+                className="flex items-center gap-1.5 rounded-full border border-primary/50 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.1em] text-primary"
+              >
+                {player === 'jugador-a' ? 'Player A' : 'Player B'}
+                <span className="material-symbols-outlined text-[14px]">logout</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -50,8 +62,8 @@ export default function AppShell({ title, children, bare = false }: Props) {
       {!bare && (
         <nav className="fixed bottom-0 z-50 w-full border-t border-outline-variant/40 bg-surface/90 backdrop-blur-xl">
           <div className="mx-auto flex max-w-story items-stretch justify-around px-margin-mobile py-2 pb-[max(env(safe-area-inset-bottom),8px)]">
-            <Tab to="/" icon="home" label="Inicio" end />
-            <Tab to="/results" icon="swords" label="Veredicto" />
+            <Tab to="/" icon="home" label={t.navHome} end />
+            <Tab to="/results" icon="swords" label={t.navVerdict} />
           </div>
         </nav>
       )}
