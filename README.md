@@ -51,8 +51,8 @@ Corré `npm run import` cuando quieras; es idempotente y no pisa lo curado.
 ### Producción (opcional, un solo proceso)
 
 ```bash
-npm run build     # genera dist/
-npm start         # Fastify sirve dist/ + API en :3001 (PORT configurable)
+npm run build:web  # genera dist/
+npm start          # Fastify sirve dist/ + API en :3001 (PORT configurable)
 ```
 
 ## Flujo

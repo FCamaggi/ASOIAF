@@ -5,7 +5,7 @@ COPY package*.json ./
 # npm install (not ci) so a committed lockfile is optional
 RUN npm install --no-audit --no-fund
 COPY . .
-RUN npm run build
+RUN npm run build:web
 
 # ---- runtime stage: prod deps + server + built SPA ----
 FROM node:20-slim AS runtime

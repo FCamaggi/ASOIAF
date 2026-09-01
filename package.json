@@ -9,7 +9,7 @@
     "dev:web": "vite",
     "seed": "tsx server/seed.ts",
     "import": "tsx server/import/run.ts",
-    "build": "vite build",
+    "build:web": "vite build",
     "start": "tsx server/index.ts"
   },
   "engines": {
