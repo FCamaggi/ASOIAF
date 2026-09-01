@@ -1,0 +1,63 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&amp;family=Hanken+Grotesk:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "inverse-surface": "#e5e2e1", "on-surface": "#e5e2e1", "obsidian-black": "#0A0A0A", "on-error-container": "#ffdad6", "on-tertiary": "#303030", "secondary-container": "#920703", "inverse-primary": "#735c00", "secondary-fixed": "#ffdad4", "valyrian-steel": "#A8A8A8", "on-tertiary-container": "#454545", "on-tertiary-fixed-variant": "#474747", "tertiary-container": "#b4b2b2", "tertiary-fixed": "#e4e2e2", "surface-container": "#201f1f", "primary-container": "#d4af37", "on-secondary-fixed-variant": "#920703", "inverse-on-surface": "#313030", "dragon-gold": "#FFD700", "on-tertiary-fixed": "#1b1c1c", "tertiary": "#cfcecd", "on-primary-fixed-variant": "#574500", "surface-container-lowest": "#0e0e0e", "on-secondary-container": "#ff9a8a", "outline-variant": "#4d4635", "surface-variant": "#353534", "targaryen-crimson": "#B22222", "on-surface-variant": "#d0c5af", "on-error": "#690005", "surface-dim": "#131313", "secondary": "#ffb4a8", "on-primary-fixed": "#241a00", "on-secondary": "#690000", "error-container": "#93000a", "on-primary": "#3c2f00", "outline": "#99907c", "primary": "#f2ca50", "secondary-fixed-dim": "#ffb4a8", "background": "#131313", "surface": "#131313", "primary-fixed-dim": "#e9c349", "on-secondary-fixed": "#410000", "surface-container-low": "#1c1b1b", "on-primary-container": "#554300", "surface-bright": "#3a3939", "on-background": "#e5e2e1", "surface-tint": "#e9c349", "charcoal-haze": "#1A1A1A", "primary-fixed": "#ffe088", "error": "#ffb4ab", "surface-container-highest": "#353534", "surface-container-high": "#2a2a2a", "tertiary-fixed-dim": "#c8c6c6" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin-desktop": "64px", "stack-lg": "48px", "stack-md": "24px", "stack-sm": "8px", "gutter": "16px", "unit": "4px", "margin-mobile": "20px" }, "fontFamily": { "headline-lg-mobile": ["\"Source Serif 4\""], "body-md": ["Hanken Grotesk"], "body-lg": ["Hanken Grotesk"], "headline-xl": ["\"Source Serif 4\""], "headline-lg": ["\"Source Serif 4\""], "label-caps": ["JetBrains Mono"], "headline-md": ["\"Source Serif 4\""] }, "fontSize": { "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }], "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "headline-xl": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }], "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "500" }], "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }] } } } };</script><style>@layer base { body { overscroll-behavior: none; } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } .atmospheric-bg { background: radial-gradient(circle at top left, #1A1A1A 0%, #131313 100%); position: fixed; inset: 0; z-index: -1; } .atmospheric-bg::after { content: ''; position: absolute; inset: 0; opacity: 0.03; pointer-events: none; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); } } </style></head><body class="bg-surface text-on-surface font-body-md text-body-md"><div class="atmospheric-bg"></div><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl"><div class="h-16 px-margin-mobile flex items-center gap-stack-md"><button class="w-12 h-12 -ml-2 flex items-center justify-center text-dragon-gold" onclick="history.back()"><span class="material-symbols-outlined">chevron_left</span></button><h1 class="font-headline-md text-headline-md text-on-surface">Trend Detail</h1></div></header><main class="relative w-full pt-16 bg-transparent"><div class="flex flex-col w-full relative overflow-hidden items-center px-margin-mobile pb-margin-desktop">
+<!-- Atmospheric Pulsing Backdrop -->
+<div class="absolute top-0 left-0 w-full h-[500px] pointer-events-none overflow-hidden z-0 flex items-center justify-center">
+<div class="w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.05)_0%,transparent_60%)] animate-pulse" style="animation-duration: 6s;"></div>
+<div class="absolute w-[600px] h-[600px] bg-[radial-gradient(circle_at_center,rgba(178,34,34,0.03)_0%,transparent_70%)] animate-pulse" style="animation-duration: 8s; animation-delay: 2s;"></div>
+</div>
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center mt-stack-lg mb-stack-lg z-10 w-full max-w-[500px]">
+<div class="w-20 h-20 mb-stack-sm flex items-center justify-center rounded-full bg-surface-container shadow-xl">
+<span class="material-symbols-outlined text-dragon-gold text-4xl animate-pulse" style="font-variation-settings: 'FILL' 1;">
+        raven
+      </span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-dragon-gold mb-unit">
+      Esperando a los cuervos...
+    </h2>
+</div>
+<!-- Status Cards Container -->
+<div class="flex flex-col w-full max-w-[500px] gap-stack-sm z-10">
+<!-- User A (Ready) -->
+<div class="flex items-center justify-between w-full bg-surface-container rounded-xl p-gutter shadow-md relative overflow-hidden">
+<!-- Subtle gold glow for ready state -->
+<div class="absolute top-0 left-0 w-1 h-full bg-dragon-gold shadow-[0_0_10px_rgba(255,215,0,0.5)]"></div>
+<div class="flex items-center gap-gutter">
+<div class="w-14 h-14 bg-cover bg-center rounded-full shadow-sm" data-alt="A majestic portrait of a medieval noble, illuminated by candlelight, deep obsidian shadows with gold trim, dark fantasy cinematic style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAwiw98_qTllB_iR_g0flLLPSiucalQ283XzoUs0yQ_Llrv8039zZmfTIgxeXlFlIXltyKYhgfexOkGCikl6dbf6W-xfvX0-Qbq6hPKFrn4FbaLImYdc5cg4f3a40z44Kaqt6AN-uEUypMVWqPOUGBRXcHlzCEv3j1NYS6h4MUfehweO3dMPTw4G2nxKHPacZUs6o1oP5yFxYcbXINrgpTdW0NpEy5YfDjmm3bIdowA9ixRB980IR5T')"></div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-valyrian-steel mb-1">Tú</span>
+<span class="font-body-lg text-body-lg text-on-surface">Veredicto sellado</span>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-obsidian-black/50 shadow-inner">
+<span class="material-symbols-outlined text-dragon-gold" style="font-variation-settings: 'FILL' 1;">
+          check_circle
+        </span>
+</div>
+</div>
+<!-- User B (Pending) -->
+<div class="flex items-center justify-between w-full bg-surface-container/40 rounded-xl p-gutter shadow-sm relative overflow-hidden">
+<div class="flex items-center gap-gutter opacity-70">
+<div class="w-14 h-14 bg-cover bg-center rounded-full grayscale shadow-sm" data-alt="A mysterious silhouette of a medieval figure in a dark cloak, shrouded in mist, charcoal and crimson ambient lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCVkfOh21cQBxkRM7W6_3Oa70UuJIJQnorzRhVwCWhbnbH6xmb4VmiElk8itPibwEOJub2fLeyuoOV5es5vHBbjx6JQgsBiarTtdyfvZwMSEy5uRk9Ky5Lu3Vn6XZGgKnMDWkpuTRGztMnHUZOr-3bxJHU3w9_3L9Hb7k3AQf5RbAA5DtfvwKjTbTv-AEUBzvg9yyjXfXMSRKDDxzg6a4-AJMrFcFL7nhOZrJSZE9K2Ybn298idVsVK')"></div>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-tertiary-container mb-1">Oponente</span>
+<span class="font-body-lg text-body-lg text-tertiary">Pensando...</span>
+</div>
+</div>
+<div class="flex items-center justify-center w-10 h-10">
+<span class="material-symbols-outlined text-valyrian-steel animate-spin" style="animation-duration: 8s; font-variation-settings: 'FILL' 1;">
+          flare
+        </span>
+</div>
+</div>
+</div>
+<!-- Footer Text -->
+<div class="flex flex-col items-center text-center mt-stack-lg z-10 px-gutter">
+<span class="material-symbols-outlined text-targaryen-crimson mb-2" style="font-variation-settings: 'FILL' 1; font-size: 16px;">
+      hourglass_empty
+    </span>
+<p class="font-body-md text-body-md text-valyrian-steel max-w-[280px]">
+      El veredicto se revelará cuando ambos hayan terminado.
+    </p>
+</div>
+</div></main></body></html>
