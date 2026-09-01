@@ -52,9 +52,17 @@ jobs:
           flyctl deploy --remote-only --ha=false -a "$FLY_APP"
 
       - name: Asegurar máquina encendida
-        if: always()
         run: |
           for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[] | select(.state != "started") | .id // empty'); do
             flyctl machine start "$m" -a "$FLY_APP" || true
           done
+          curl -sS -m 40 -o /dev/null "https://$FLY_APP.fly.dev/api/health" || true
+          sleep 8
           flyctl status -a "$FLY_APP" || true
+
+      - name: Import catálogo completo + imágenes
+        # AIOIAF (todos los personajes/casas) + AWOIAF (dragones/batallas/lugares)
+        # + ThronesAPI/Commons. Idempotente; el seed (merge) lo conserva entre deploys.
+        run: |
+          flyctl ssh console -a "$FLY_APP" --command "npm run import" \
+            || echo "::warning::import falló — queda el catálogo curado"
