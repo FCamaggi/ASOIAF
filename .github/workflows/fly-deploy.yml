@@ -10,7 +10,7 @@ on:
 
 env:
   FLY_APP: asoiaf-trend
-  FLY_REGION: eze          # Buenos Aires. Si falla por capacidad: gig, bog, qro o mia
+  FLY_REGION: gru          # São Paulo (probado OK para esta org). Alternativas: gig, bog, mia
   FLY_VOLUME: asoiaf_data
 
 jobs:
