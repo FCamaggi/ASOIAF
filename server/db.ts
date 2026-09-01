@@ -22,7 +22,8 @@ export interface StoredUser {
 }
 
 export interface StoredChoice {
-  optionId: string;
+  optionId: string | null;
+  customName: string | null;
   updatedAt: string;
   imageUrl: string | null;
 }

@@ -62,9 +62,13 @@ for (const u of users) {
 }
 
 // 6. drop choices pointing at an option not offered in that category ---------
+//    (write-ins — customName set, optionId null — are always kept)
 for (const [userSlug, byCat] of Object.entries(db.choices)) {
   for (const [catSlug, choice] of Object.entries(byCat)) {
-    if (!nextLinks[catSlug]?.includes(choice.optionId)) delete db.choices[userSlug][catSlug];
+    const ok =
+      !!choice.customName ||
+      (!!choice.optionId && !!nextLinks[catSlug]?.includes(choice.optionId));
+    if (!ok) delete db.choices[userSlug][catSlug];
   }
 }
 

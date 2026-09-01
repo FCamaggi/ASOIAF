@@ -19,6 +19,7 @@ import type {
   Comparison,
   ComparisonRow,
   Option,
+  PreviewRow,
 } from '../shared/types.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -90,7 +91,8 @@ app.get('/api/users/:slug/choices', async (req, reply) => {
   return Object.entries(byCat).map(
     ([categorySlug, c]): Choice => ({
       categorySlug,
-      optionId: c.optionId,
+      optionId: c.optionId ?? null,
+      customName: c.customName ?? null,
       updatedAt: c.updatedAt,
       imageUrl: c.imageUrl ?? null,
     }),
@@ -102,22 +104,38 @@ app.put('/api/users/:slug/choices/:categorySlug', async (req, reply) => {
   if (!isUser(slug)) return reply.code(404).send({ error: 'unknown user' });
   const allowed = db.catalogue.categoryOptions[categorySlug];
   if (!allowed) return reply.code(404).send({ error: 'unknown category' });
-  const { optionId } = (req.body ?? {}) as { optionId?: string };
-  if (!optionId) return reply.code(400).send({ error: 'optionId required' });
-  if (!allowed.includes(optionId)) {
+
+  const body = (req.body ?? {}) as { optionId?: string; customName?: string };
+  const customName = typeof body.customName === 'string' ? body.customName.trim().slice(0, 80) : '';
+  const optionId = body.optionId;
+
+  if (!customName && !optionId) {
+    return reply.code(400).send({ error: 'optionId or customName required' });
+  }
+  if (!customName && optionId && !allowed.includes(optionId)) {
     return reply.code(422).send({ error: 'option does not belong to this category' });
   }
+
   const prev = db.choices[slug]?.[categorySlug];
-  if (prev && prev.optionId !== optionId && prev.imageUrl) {
+  const sameTarget =
+    prev &&
+    prev.optionId === (customName ? null : optionId ?? null) &&
+    prev.customName === (customName || null);
+  if (prev && !sameTarget && prev.imageUrl) {
     removeByPrefix(slugToken('pick', slug, categorySlug));
   }
   (db.choices[slug] ??= {})[categorySlug] = {
-    optionId,
+    optionId: customName ? null : optionId ?? null,
+    customName: customName || null,
     updatedAt: new Date().toISOString(),
-    imageUrl: prev && prev.optionId === optionId ? prev.imageUrl : null,
+    imageUrl: sameTarget ? prev!.imageUrl : null,
   };
   save(db);
-  return { categorySlug, optionId };
+  return {
+    categorySlug,
+    optionId: customName ? null : optionId ?? null,
+    customName: customName || null,
+  };
 });
 
 app.post('/api/users/:slug/choices/:categorySlug/image', async (req, reply) => {
@@ -141,25 +159,37 @@ app.post('/api/users/:slug/choices/:categorySlug/image', async (req, reply) => {
   return { categorySlug, imageUrl: choice.imageUrl };
 });
 
+const getOptById = (id: string | null | undefined): Option | null =>
+  (id && optionById().get(id)) || null;
+const resolveName = (c: StoredChoiceLike | undefined, o: Option | null): string | null =>
+  c?.customName ?? o?.name ?? null;
+const resolveImg = (c: StoredChoiceLike | undefined, o: Option | null): string | null =>
+  c?.imageUrl ?? o?.imageUrl ?? null;
+type StoredChoiceLike = { optionId: string | null; customName: string | null; imageUrl: string | null };
+
 app.get('/api/comparison', async () => {
   const cats = sortedCategories();
-  const opts = optionById();
-  const getOpt = (id: string | undefined): Option | null => (id && opts.get(id)) || null;
   const aC = db.choices['jugador-a'] ?? {};
   const bC = db.choices['jugador-b'] ?? {};
-  const img = (o: Option | null, override: string | null | undefined) =>
-    override ?? o?.imageUrl ?? null;
 
   const rows: ComparisonRow[] = cats.map((category) => {
-    const a = getOpt(aC[category.slug]?.optionId);
-    const b = getOpt(bC[category.slug]?.optionId);
+    const ca = aC[category.slug];
+    const cb = bC[category.slug];
+    const a = getOptById(ca?.optionId);
+    const b = getOptById(cb?.optionId);
+    const aName = resolveName(ca, a);
+    const bName = resolveName(cb, b);
+    const match =
+      !!aName && !!bName && aName.toLowerCase().trim() === bName.toLowerCase().trim();
     return {
       category,
       a,
       b,
-      aImageUrl: img(a, aC[category.slug]?.imageUrl),
-      bImageUrl: img(b, bC[category.slug]?.imageUrl),
-      match: !!a && !!b && a.id === b.id,
+      aName,
+      bName,
+      aImageUrl: resolveImg(ca, a),
+      bImageUrl: resolveImg(cb, b),
+      match,
     };
   });
 
@@ -176,6 +206,30 @@ app.get('/api/comparison', async () => {
     rows,
   };
   return result;
+});
+
+// One player's own picks — the solo preview (no opponent data).
+app.get('/api/users/:slug/preview', async (req, reply) => {
+  const { slug } = req.params as { slug: string };
+  if (!isUser(slug)) return reply.code(404).send({ error: 'unknown user' });
+  const mine = db.choices[slug] ?? {};
+  const rows: PreviewRow[] = sortedCategories().map((category) => {
+    const c = mine[category.slug];
+    const option = getOptById(c?.optionId);
+    return {
+      category,
+      option,
+      name: resolveName(c, option),
+      imageUrl: resolveImg(c, option),
+      custom: !!c?.customName,
+    };
+  });
+  return {
+    user: db.users[slug],
+    total: rows.length,
+    answered: rows.filter((r) => r.name).length,
+    rows,
+  };
 });
 
 // ---------------------------------------------------------------------------

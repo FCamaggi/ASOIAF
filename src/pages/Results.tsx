@@ -175,7 +175,7 @@ export default function Results() {
           label={cmp.users.a?.displayName ?? 'Player A'}
           has={!!row.aImageUrl}
           busy={imgBusy === `a:${row.category.slug}`}
-          disabled={!row.a}
+          disabled={!row.aName}
           t={t}
           onPick={(f) => replaceImage('a', row.category.slug, f)}
         />
@@ -183,7 +183,7 @@ export default function Results() {
           label={cmp.users.b?.displayName ?? 'Player B'}
           has={!!row.bImageUrl}
           busy={imgBusy === `b:${row.category.slug}`}
-          disabled={!row.b}
+          disabled={!row.bName}
           t={t}
           onPick={(f) => replaceImage('b', row.category.slug, f)}
         />
@@ -232,9 +232,9 @@ export default function Results() {
                     {catLabel(r.category, lang)}
                   </span>
                   <span className="block text-[13px] text-on-surface">
-                    {r.a?.name ?? '—'}
+                    {r.aName ?? '—'}
                     <span className="text-on-surface-variant/40"> · </span>
-                    {r.b?.name ?? '—'}
+                    {r.bName ?? '—'}
                   </span>
                 </span>
                 {r.match && (

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { usePlayer } from './store.ts';
 import Welcome from './pages/Welcome.tsx';
 import Vote from './pages/Vote.tsx';
+import Preview from './pages/Preview.tsx';
 import Waiting from './pages/Waiting.tsx';
 import Results from './pages/Results.tsx';
 
@@ -14,6 +15,10 @@ export default function App() {
       <Route
         path="/vote"
         element={player ? <Vote /> : <Navigate to="/" replace />}
+      />
+      <Route
+        path="/preview"
+        element={player ? <Preview /> : <Navigate to="/" replace />}
       />
       <Route
         path="/waiting"

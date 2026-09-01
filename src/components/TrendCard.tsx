@@ -10,6 +10,9 @@ interface Props {
   index: number;
   total: number;
   categoryLabel: string;
+  /** hide this side (solo preview) */
+  sealedSide?: 'a' | 'b';
+  sealedText?: string;
 }
 
 /**
@@ -22,8 +25,10 @@ interface Props {
  * with the category label pinned to the centre and a crimson frame on a match.
  */
 const TrendCard = forwardRef<HTMLDivElement, Props>(
-  ({ row, a, b, index, total, categoryLabel }, ref) => {
+  ({ row, a, b, index, total, categoryLabel, sealedSide, sealedText = 'Sealed' }, ref) => {
     const { a: aOpt, b: bOpt, match } = row;
+    const sealA = sealedSide === 'a';
+    const sealB = sealedSide === 'b';
 
   return (
     <div
@@ -39,12 +44,20 @@ const TrendCard = forwardRef<HTMLDivElement, Props>(
     >
       <div className="grid h-full grid-cols-2 grid-rows-2">
         {/* Row 1 — the players */}
-        <PlayerCell user={a} side="A" />
-        <PlayerCell user={b} side="B" />
+        <PlayerCell user={a} side="A" sealed={sealA} sealedText={sealedText} />
+        <PlayerCell user={b} side="B" sealed={sealB} sealedText={sealedText} />
 
         {/* Row 2 — their picks */}
-        <ChoiceCell name={aOpt?.name ?? '—'} sub={aOpt?.subtitle ?? null} art={aOpt} imageUrl={row.aImageUrl} />
-        <ChoiceCell name={bOpt?.name ?? '—'} sub={bOpt?.subtitle ?? null} art={bOpt} imageUrl={row.bImageUrl} />
+        {sealA ? (
+          <SealedCell text={sealedText} />
+        ) : (
+          <ChoiceCell name={row.aName ?? '—'} sub={aOpt?.subtitle ?? null} art={aOpt} imageUrl={row.aImageUrl} />
+        )}
+        {sealB ? (
+          <SealedCell text={sealedText} />
+        ) : (
+          <ChoiceCell name={row.bName ?? '—'} sub={bOpt?.subtitle ?? null} art={bOpt} imageUrl={row.bImageUrl} />
+        )}
       </div>
 
       {/* centre category chip */}
@@ -81,7 +94,17 @@ const TrendCard = forwardRef<HTMLDivElement, Props>(
 TrendCard.displayName = 'TrendCard';
 export default TrendCard;
 
-function PlayerCell({ user, side }: { user: User; side: 'A' | 'B' }) {
+function PlayerCell({
+  user,
+  side,
+  sealed,
+  sealedText,
+}: {
+  user: User;
+  side: 'A' | 'B';
+  sealed?: boolean;
+  sealedText?: string;
+}) {
   return (
     <div className="relative flex flex-col items-center justify-center gap-2 border-b border-valyrian-steel/15 bg-surface-container-low/60 p-3">
       <PlayerAvatar user={user} size={68} />
@@ -89,7 +112,18 @@ function PlayerCell({ user, side }: { user: User; side: 'A' | 'B' }) {
         Player {side}
       </span>
       <span className="text-center font-serif text-[14px] leading-tight text-on-surface">
-        {user.displayName}
+        {sealed ? sealedText : user.displayName}
+      </span>
+    </div>
+  );
+}
+
+function SealedCell({ text }: { text: string }) {
+  return (
+    <div className="relative flex flex-col items-center justify-center gap-2 border-t border-valyrian-steel/15 bg-surface-container-low">
+      <span className="material-symbols-outlined text-[26px] text-on-surface-variant/40">lock</span>
+      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-on-surface-variant/50">
+        {text}
       </span>
     </div>
   );

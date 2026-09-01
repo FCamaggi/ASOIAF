@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { CategoryWithOptions, Choice } from '../../shared/types.ts';
 import { api } from '../api.ts';
 import { usePlayer } from '../store.ts';
@@ -7,15 +7,19 @@ import { catLabel, catPrompt, useLang, useT } from '../lib/i18n.ts';
 import AppShell from '../components/AppShell.tsx';
 import OptionCard from '../components/OptionCard.tsx';
 
+type ChoicePick = { optionId: string | null; customName: string | null };
+
 export default function Vote() {
   const [player] = usePlayer();
   const [lang] = useLang();
   const t = useT();
   const [cats, setCats] = useState<CategoryWithOptions[]>([]);
-  const [choices, setChoices] = useState<Record<string, string>>({});
+  const [choices, setChoices] = useState<Record<string, ChoicePick>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState('');
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customText, setCustomText] = useState('');
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -27,13 +31,19 @@ export default function Vote() {
     Promise.all([api.categories(), api.choices(player)])
       .then(([c, ch]) => {
         setCats(c);
-        setChoices(Object.fromEntries(ch.map((x: Choice) => [x.categorySlug, x.optionId])));
+        setChoices(
+          Object.fromEntries(
+            ch.map((x: Choice) => [x.categorySlug, { optionId: x.optionId, customName: x.customName }]),
+          ),
+        );
       })
       .catch((e) => setLoadError(String(e.message ?? e)));
   }, [player]);
 
   useEffect(() => {
     setQuery('');
+    setCustomOpen(false);
+    setCustomText('');
     window.scrollTo(0, 0);
   }, [i]);
 
@@ -49,8 +59,7 @@ export default function Vote() {
     if (q) {
       const matched = category.options.filter(
         (o) =>
-          o.name.toLowerCase().includes(q) ||
-          (o.subtitle ?? '').toLowerCase().includes(q),
+          o.name.toLowerCase().includes(q) || (o.subtitle ?? '').toLowerCase().includes(q),
       );
       return { list: matched, hidden: 0 };
     }
@@ -59,19 +68,29 @@ export default function Vote() {
     return { list: base, hidden: category.options.length - base.length };
   }, [category, query]);
 
-  async function select(optionId: string) {
-    if (!player || !category) return;
+  async function persist(fn: () => Promise<unknown>, optimistic: ChoicePick) {
+    if (!category) return;
     const prev = choices[category.slug];
-    setChoices((c) => ({ ...c, [category.slug]: optionId }));
+    setChoices((c) => ({ ...c, [category.slug]: optimistic }));
     setSaving(true);
     try {
-      await api.choose(player, category.slug, optionId);
+      await fn();
     } catch {
       setChoices((c) => ({ ...c, [category.slug]: prev }));
     } finally {
       setSaving(false);
     }
   }
+
+  const selectOption = (optionId: string) =>
+    persist(() => api.choose(player!, category!.slug, optionId), { optionId, customName: null });
+
+  const selectCustom = () => {
+    const name = customText.trim();
+    if (!name) return;
+    setCustomOpen(false);
+    persist(() => api.chooseCustom(player!, category!.slug, name), { optionId: null, customName: name });
+  };
 
   const go = (next: number) => setParams({ i: String(next) }, { replace: true });
 
@@ -92,6 +111,7 @@ export default function Vote() {
 
   const isLast = i === cats.length - 1;
   const label = catLabel(category, lang);
+  const current = choices[category.slug];
 
   return (
     <AppShell title={t.hdrHome} bare>
@@ -128,13 +148,25 @@ export default function Vote() {
         />
       </label>
 
+      {current?.customName && (
+        <div className="mt-3 flex items-center justify-between rounded border border-primary/60 bg-surface-container-low px-3 py-2">
+          <span className="text-[14px] text-on-surface">
+            <span className="mr-2 rounded-sm bg-primary/20 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-primary">
+              {t.customBadge}
+            </span>
+            {current.customName}
+          </span>
+          <span className="material-symbols-outlined text-[18px] text-primary">check</span>
+        </div>
+      )}
+
       <div className="mt-stack-md grid grid-cols-2 gap-gutter">
         {list.map((o) => (
           <OptionCard
             key={o.id}
             option={o}
-            selected={choices[category.slug] === o.id}
-            onSelect={select}
+            selected={current?.optionId === o.id}
+            onSelect={selectOption}
           />
         ))}
         {list.length === 0 && (
@@ -143,11 +175,44 @@ export default function Vote() {
           </p>
         )}
       </div>
+
       {hidden > 0 && !query && (
         <p className="mt-3 text-center text-[12px] text-on-surface-variant/50">
           {t.moreFromCanon(hidden)}
         </p>
       )}
+
+      {/* write-in */}
+      <div className="mt-stack-md">
+        {customOpen ? (
+          <div className="flex gap-2">
+            <input
+              autoFocus
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && selectCustom()}
+              placeholder={t.writeOwnPlaceholder}
+              maxLength={80}
+              className="w-full rounded border border-primary/50 bg-surface-container-low px-3 py-2 text-[14px] text-on-surface outline-none"
+            />
+            <button type="button" className="btn-solid-gold shrink-0" onClick={selectCustom}>
+              {t.useThis}
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setCustomText(current?.customName ?? '');
+              setCustomOpen(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded border border-dashed border-valyrian-steel/40 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-on-surface-variant/70 hover:border-primary/50 hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[16px]">edit</span>
+            {t.writeOwn}
+          </button>
+        )}
+      </div>
 
       <div className="mt-stack-lg flex items-center justify-between gap-3">
         <button
@@ -182,9 +247,18 @@ export default function Vote() {
         )}
       </div>
 
-      <p className="mt-3 text-center font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/40">
-        {saving ? t.saving : choices[category.slug] ? t.choiceSaved : t.notChosen}
-      </p>
+      <div className="mt-3 flex items-center justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/40">
+          {saving ? t.saving : current ? t.choiceSaved : t.notChosen}
+        </span>
+        <Link
+          to="/preview"
+          className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-primary/80"
+        >
+          <span className="material-symbols-outlined text-[14px]">visibility</span>
+          {t.previewMine}
+        </Link>
+      </div>
     </AppShell>
   );
 }

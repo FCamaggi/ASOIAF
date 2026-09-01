@@ -83,6 +83,15 @@ type Dict = {
   imageReplacesNote: string;
   match: string;
   errorImage: string;
+  writeOwn: string;
+  writeOwnPlaceholder: string;
+  useThis: string;
+  customBadge: string;
+  previewMine: string;
+  previewTitle: string;
+  previewSubtitleWaiting: string;
+  opponentSealed: string;
+  downloadMine: string;
 };
 
 export const TXT: Record<Lang, Dict> = {
@@ -140,6 +149,15 @@ export const TXT: Record<Lang, Dict> = {
     imageReplacesNote: "The image replaces the monogram on this category's card",
     match: 'Match',
     errorImage: 'Could not update the image',
+    writeOwn: 'Write my own',
+    writeOwnPlaceholder: 'Type your pick…',
+    useThis: 'Use this',
+    customBadge: 'custom',
+    previewMine: 'Preview my trend',
+    previewTitle: 'My Trend (preview)',
+    previewSubtitleWaiting: "Only your picks. The opponent's stay sealed.",
+    opponentSealed: 'Sealed',
+    downloadMine: 'Download my side',
   },
   es: {
     navHome: 'Inicio',
@@ -195,6 +213,15 @@ export const TXT: Record<Lang, Dict> = {
     imageReplacesNote: 'La imagen reemplaza el monograma en la tarjeta de esta categoría',
     match: 'Match',
     errorImage: 'No se pudo actualizar la imagen',
+    writeOwn: 'Escribir la mía',
+    writeOwnPlaceholder: 'Escribí tu elección…',
+    useThis: 'Usar esta',
+    customBadge: 'propia',
+    previewMine: 'Ver mi trend',
+    previewTitle: 'Mi Trend (preview)',
+    previewSubtitleWaiting: 'Solo tus elecciones. Las del otro quedan selladas.',
+    opponentSealed: 'Sellado',
+    downloadMine: 'Descargar mi lado',
   },
 };
 

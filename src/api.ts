@@ -1,7 +1,9 @@
 import type {
+  Category,
   CategoryWithOptions,
   Choice,
   Comparison,
+  PreviewRow,
   User,
 } from '../shared/types.ts';
 
@@ -33,7 +35,19 @@ export const api = {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ optionId }),
-    }).then(json<{ categorySlug: string; optionId: string }>),
+    }).then(json<{ categorySlug: string; optionId: string | null }>),
+
+  chooseCustom: (slug: string, categorySlug: string, customName: string) =>
+    fetch(`/api/users/${slug}/choices/${categorySlug}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ customName }),
+    }).then(json<{ categorySlug: string; customName: string | null }>),
+
+  preview: (slug: string) =>
+    fetch(`/api/users/${slug}/preview`).then(
+      json<{ user: User; total: number; answered: number; rows: PreviewRow[] }>,
+    ),
 
   setChoiceImage: (slug: string, categorySlug: string, dataUrl: string | null) =>
     fetch(`/api/users/${slug}/choices/${categorySlug}/image`, {
