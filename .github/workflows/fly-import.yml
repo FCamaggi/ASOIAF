@@ -1,7 +1,8 @@
 name: Fly Import (catálogo externo)
 
-# Ejecuta `npm run import` DENTRO de la máquina en Fly (AIOIAF + AWOIAF).
-# Disparalo a mano desde la pestaña Actions cuando quieras ampliar el canon.
+# Ejecuta `npm run import` DENTRO de la máquina en Fly:
+#   AIOIAF (personajes/casas) + AWOIAF (dragones/batallas/lugares)
+#   + ThronesAPI/Commons para las imágenes -> uploads/
 on:
   workflow_dispatch:
 
@@ -10,6 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: asoiaf-trend
     steps:
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl ssh console -a asoiaf-trend --command "npm run import"
+
+      - name: Encender la máquina
+        run: |
+          for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[] | select(.state != "started") | .id // empty'); do
+            flyctl machine start "$m" -a "$FLY_APP" || true
+          done
+          curl -sS -m 30 -o /dev/null "https://$FLY_APP.fly.dev/api/health" || true
+          sleep 8
+
+      - name: Import
+        run: flyctl ssh console -a "$FLY_APP" --command "npm run import"

@@ -1,8 +1,6 @@
 name: Fly Deploy
 
 # Todo corre en runners de GitHub (que llegan a api.fly.io).
-# Estrategia: destruir la máquina y recrearla en cada deploy. Evita el error
-# "insufficient CPUs on the current host" (update in-place sobre un host lleno).
 on:
   push:
     branches: [main]
@@ -10,7 +8,7 @@ on:
 
 env:
   FLY_APP: asoiaf-trend
-  FLY_REGION: gru          # São Paulo (probado OK para esta org). Alternativas: gig, bog, mia
+  FLY_REGION: gru          # São Paulo. Alternativas si falla por capacidad: gig, bog, mia
   FLY_VOLUME: asoiaf_data
 
 jobs:
@@ -25,40 +23,38 @@ jobs:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Crear la app si no existe
+      - name: App
         run: flyctl apps list | grep -qw "$FLY_APP" || flyctl apps create "$FLY_APP" --org personal
-
-      - name: Destruir máquinas existentes (recreación limpia)
-        run: |
-          for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[].id // empty'); do
-            echo "destruyendo $m"
-            flyctl machine destroy "$m" -a "$FLY_APP" --force || true
-          done
 
       - name: Volumen en $FLY_REGION
         run: |
-          # borrar volúmenes en otra región (p.ej. gru viejo)
           for v in $(flyctl volumes list -a "$FLY_APP" --json | jq -r --arg r "$FLY_REGION" '.[] | select(.region != $r) | .id // empty'); do
-            echo "borrando volumen fuera de región: $v"
             flyctl volumes destroy "$v" -a "$FLY_APP" --yes || true
           done
           COUNT=$(flyctl volumes list -a "$FLY_APP" --json | jq -r --arg r "$FLY_REGION" '[.[] | select(.region == $r)] | length')
-          if [ "${COUNT:-0}" -lt 1 ]; then
-            flyctl volumes create "$FLY_VOLUME" -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
-          fi
-          flyctl volumes list -a "$FLY_APP"
+          [ "${COUNT:-0}" -ge 1 ] || flyctl volumes create "$FLY_VOLUME" -a "$FLY_APP" --region "$FLY_REGION" --size 1 --yes
 
-      - name: Asignar IPs públicas si faltan
+      - name: IPs
         run: |
           flyctl ips allocate-v4 --shared -a "$FLY_APP" || true
           flyctl ips allocate-v6 -a "$FLY_APP" || true
-          flyctl ips list -a "$FLY_APP"
 
-      - name: Deploy
-        run: flyctl deploy --remote-only --ha=false -a "$FLY_APP"
+      - name: Deploy (retry con recreación si el host está lleno)
+        run: |
+          set -o pipefail
+          if flyctl deploy --remote-only --ha=false -a "$FLY_APP"; then
+            exit 0
+          fi
+          echo "::warning::deploy falló — destruyo máquinas y reintento en un host limpio"
+          for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[].id // empty'); do
+            flyctl machine destroy "$m" -a "$FLY_APP" --force || true
+          done
+          flyctl deploy --remote-only --ha=false -a "$FLY_APP"
 
-      - name: Estado final
+      - name: Asegurar máquina encendida
         if: always()
         run: |
+          for m in $(flyctl machine list -a "$FLY_APP" --json | jq -r '.[] | select(.state != "started") | .id // empty'); do
+            flyctl machine start "$m" -a "$FLY_APP" || true
+          done
           flyctl status -a "$FLY_APP" || true
-          flyctl ips list -a "$FLY_APP" || true
