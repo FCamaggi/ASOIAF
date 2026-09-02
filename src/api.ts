@@ -59,6 +59,9 @@ export const api = {
   resetChoices: (slug: string) =>
     fetch(`/api/users/${slug}/choices`, { method: 'DELETE' }).then(json<{ ok: true }>),
 
+  reveal: (slug: string) =>
+    fetch(`/api/users/${slug}/reveal`, { method: 'POST' }).then(json<{ ok: true }>),
+
   setChoiceImage: (slug: string, categorySlug: string, dataUrl: string | null) =>
     fetch(`/api/users/${slug}/choices/${categorySlug}/image`, {
       method: 'POST',

@@ -33,12 +33,15 @@ export interface DB {
   users: Record<string, StoredUser>;
   /** user slug -> category slug -> choice */
   choices: Record<string, Record<string, StoredChoice>>;
+  /** user slug -> pressed "reveal the verdict" */
+  reveal: Record<string, boolean>;
 }
 
 const EMPTY: DB = {
   catalogue: { categories: [], options: [], categoryOptions: {} },
   users: {},
   choices: {},
+  reveal: {},
 };
 
 let cache: DB | null = null;
@@ -55,6 +58,7 @@ export function load(): DB {
       catalogue: parsed.catalogue ?? structuredClone(EMPTY.catalogue),
       users: parsed.users ?? {},
       choices: parsed.choices ?? {},
+      reveal: parsed.reveal ?? {},
     };
   } catch {
     cache = structuredClone(EMPTY);

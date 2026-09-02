@@ -141,6 +141,7 @@ app.put('/api/users/:slug/choices/:categorySlug', async (req, reply) => {
     updatedAt: new Date().toISOString(),
     imageUrl: sameTarget ? prev!.imageUrl : null,
   };
+  db.reveal[slug] = false; // changing an answer re-locks your reveal
   save(db);
   return {
     categorySlug,
@@ -156,6 +157,7 @@ app.delete('/api/users/:slug/choices', async (req, reply) => {
     removeByPrefix(slugToken('pick', slug, catSlug));
   }
   db.choices[slug] = {};
+  db.reveal[slug] = false;
   save(db);
   return { ok: true };
 });
@@ -218,16 +220,30 @@ app.get('/api/comparison', async () => {
   const total = cats.length;
   const aComplete = total > 0 && cats.every((c) => aC[c.slug]);
   const bComplete = total > 0 && cats.every((c) => bC[c.slug]);
+  const bothComplete = aComplete && bComplete;
+  const aRevealed = bothComplete && !!db.reveal['jugador-a'];
+  const bRevealed = bothComplete && !!db.reveal['jugador-b'];
 
   const result: Comparison = {
     users: { a: db.users['jugador-a'], b: db.users['jugador-b'] },
     aComplete,
     bComplete,
-    bothComplete: aComplete && bComplete,
+    bothComplete,
+    aRevealed,
+    bRevealed,
+    revealed: bothComplete && aRevealed && bRevealed,
     total,
     rows,
   };
   return result;
+});
+
+app.post('/api/users/:slug/reveal', async (req, reply) => {
+  const { slug } = req.params as { slug: string };
+  if (!isUser(slug)) return reply.code(404).send({ error: 'unknown user' });
+  db.reveal[slug] = true;
+  save(db);
+  return { ok: true };
 });
 
 // One player's own picks — the solo preview (no opponent data).

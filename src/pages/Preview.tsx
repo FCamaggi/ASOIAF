@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toPng } from 'html-to-image';
 import type { Comparison } from '../../shared/types.ts';
 import { api } from '../api.ts';
@@ -16,17 +16,35 @@ export default function Preview() {
   const [err, setErr] = useState<string | null>(null);
   const [i, setI] = useState(0);
   const [imgBusy, setImgBusy] = useState(false);
+  const [revealing, setRevealing] = useState(false);
   const [lang] = useLang();
   const t = useT();
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
 
   const me: 'a' | 'b' = player === 'jugador-b' ? 'b' : 'a';
   const sealed: 'a' | 'b' = me === 'a' ? 'b' : 'a';
 
   const refresh = () => api.comparison().then(setCmp);
+
   useEffect(() => {
-    refresh().catch((e) => setErr(String(e.message ?? e)));
-  }, []);
+    let alive = true;
+    const tick = () =>
+      api
+        .comparison()
+        .then((c) => {
+          if (!alive) return;
+          setCmp(c);
+          if (c.revealed) navigate('/results', { replace: true });
+        })
+        .catch((e) => setErr(String(e.message ?? e)));
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [navigate]);
 
   if (err) {
     return (
@@ -46,6 +64,11 @@ export default function Preview() {
   const row = cmp.rows[i];
   const myName = me === 'a' ? row.aName : row.bName;
   const myImg = me === 'a' ? row.aImageUrl : row.bImageUrl;
+  const iRevealed = me === 'a' ? cmp.aRevealed : cmp.bRevealed;
+  const foeName =
+    me === 'a'
+      ? cmp.users.b?.displayName ?? 'Player B'
+      : cmp.users.a?.displayName ?? 'Player A';
 
   async function setImage(file: File | null) {
     setImgBusy(true);
@@ -57,6 +80,18 @@ export default function Preview() {
       setErr(e.message ?? t.errorImage);
     } finally {
       setImgBusy(false);
+    }
+  }
+
+  async function doReveal() {
+    setRevealing(true);
+    try {
+      await api.reveal(player!);
+      await refresh();
+    } catch (e: any) {
+      setErr(e.message ?? 'Reveal failed');
+    } finally {
+      setRevealing(false);
     }
   }
 
@@ -79,8 +114,31 @@ export default function Preview() {
         <h1 className="font-serif text-[30px] font-bold uppercase leading-none text-dragon-gold">
           {t.previewTitle}
         </h1>
-        <p className="mt-stack-sm text-[13px] text-on-surface-variant">{t.previewSubtitleWaiting}</p>
+        <p className="mt-stack-sm text-[13px] text-on-surface-variant">
+          {cmp.bothComplete ? t.revealReadyHint : t.previewSubtitleWaiting}
+        </p>
       </header>
+
+      {cmp.bothComplete && (
+        <div className="mt-stack-md">
+          {iRevealed ? (
+            <p className="flex items-center justify-center gap-2 rounded border border-primary/40 bg-surface-container-low py-3 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-primary/80">
+              <span className="material-symbols-outlined text-[16px]">hourglass_top</span>
+              {t.revealWaitingOther(foeName)}
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="btn-solid-gold flex w-full items-center justify-center gap-2"
+              disabled={revealing}
+              onClick={doReveal}
+            >
+              <span className="material-symbols-outlined text-[16px]">visibility</span>
+              {revealing ? t.generating : t.revealBtn}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mt-stack-md flex items-center justify-between">
         <button
@@ -121,7 +179,7 @@ export default function Preview() {
       <div className="mt-stack-md flex flex-col gap-2">
         <label
           className={`btn-outline flex cursor-pointer items-center justify-center gap-2 ${
-            !myName ? 'pointer-events-none opacity-30' : ''
+            !myName || iRevealed ? 'pointer-events-none opacity-30' : ''
           }`}
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -132,7 +190,7 @@ export default function Preview() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             className="hidden"
-            disabled={imgBusy || !myName}
+            disabled={imgBusy || !myName || iRevealed}
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null;
               if (f) setImage(f);
@@ -140,7 +198,7 @@ export default function Preview() {
             }}
           />
         </label>
-        {myImg && (
+        {myImg && !iRevealed && (
           <button
             type="button"
             className="text-center font-mono text-[10px] uppercase tracking-[0.1em] text-on-surface-variant/50 hover:text-error"
@@ -151,13 +209,13 @@ export default function Preview() {
         )}
         <button
           type="button"
-          className="btn-solid-gold flex items-center justify-center gap-2"
+          className="btn-ghost-gold flex items-center justify-center gap-2"
           onClick={download}
         >
           <span className="material-symbols-outlined text-[16px]">download</span>
           {t.downloadMine}
         </button>
-        <Link to="/vote" className="btn-ghost-gold text-center">
+        <Link to="/vote" className="btn-outline text-center">
           {t.backToChoices}
         </Link>
       </div>

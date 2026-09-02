@@ -98,6 +98,11 @@ type Dict = {
   cropUse: string;
   resetProgress: string;
   resetConfirm: string;
+  revealBtn: string;
+  revealReadyHint: string;
+  revealWaitingOther: (who: string) => string;
+  revealPending: string;
+  goToPreview: string;
 };
 
 export const TXT: Record<Lang, Dict> = {
@@ -170,6 +175,11 @@ export const TXT: Record<Lang, Dict> = {
     cropUse: 'Use photo',
     resetProgress: 'Reset my progress',
     resetConfirm: 'Delete all your picks and images? This cannot be undone.',
+    revealBtn: 'Reveal the verdict',
+    revealReadyHint: 'Both of you are done. Tweak your images, then reveal.',
+    revealWaitingOther: (who) => `Waiting for ${who} to reveal…`,
+    revealPending: 'The verdict is ready — reveal it from your preview.',
+    goToPreview: 'Go to my preview',
   },
   es: {
     navHome: 'Inicio',
@@ -240,6 +250,11 @@ export const TXT: Record<Lang, Dict> = {
     cropUse: 'Usar foto',
     resetProgress: 'Reiniciar mi progreso',
     resetConfirm: '¿Borrar todas tus elecciones e imágenes? No se puede deshacer.',
+    revealBtn: 'Revelar el veredicto',
+    revealReadyHint: 'Ambos terminaron. Ajustá tus imágenes y después revelá.',
+    revealWaitingOther: (who) => `Esperando que ${who} revele…`,
+    revealPending: 'El veredicto está listo — revelalo desde tu preview.',
+    goToPreview: 'Ir a mi preview',
   },
 };
 

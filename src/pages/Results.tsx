@@ -59,7 +59,7 @@ export default function Results() {
     );
   }
 
-  if (!cmp.bothComplete) {
+  if (!cmp.revealed) {
     const doneWho = cmp.aComplete ? 'Player A' : 'Player B';
     const missingWho = cmp.aComplete ? 'Player B' : 'Player A';
     return (
@@ -67,13 +67,24 @@ export default function Results() {
         <div className="flex flex-col items-center gap-stack-md pt-stack-lg text-center">
           <span className="material-symbols-outlined text-[40px] text-primary">lock</span>
           <h1 className="font-serif text-[28px] font-bold text-dragon-gold">{t.stillSealed}</h1>
-          <p className="max-w-[22rem] text-[14px] text-on-surface-variant">
-            {t.someoneFinished(doneWho)}{' '}
-            {cmp.aComplete && cmp.bComplete ? '' : t.missingOther(missingWho, cmp.total)}
-          </p>
-          <Link to="/vote" className="btn-ghost-gold">
-            {t.goVote}
-          </Link>
+          {cmp.bothComplete ? (
+            <>
+              <p className="max-w-[22rem] text-[14px] text-on-surface-variant">{t.revealPending}</p>
+              <Link to="/preview" className="btn-ghost-gold">
+                {t.goToPreview}
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="max-w-[22rem] text-[14px] text-on-surface-variant">
+                {t.someoneFinished(doneWho)}{' '}
+                {cmp.aComplete && cmp.bComplete ? '' : t.missingOther(missingWho, cmp.total)}
+              </p>
+              <Link to="/vote" className="btn-ghost-gold">
+                {t.goVote}
+              </Link>
+            </>
+          )}
         </div>
       </AppShell>
     );

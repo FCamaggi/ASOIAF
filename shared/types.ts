@@ -98,6 +98,10 @@ export interface Comparison {
   aComplete: boolean;
   bComplete: boolean;
   bothComplete: boolean;
+  aRevealed: boolean;
+  bRevealed: boolean;
+  /** both complete AND both pressed reveal */
+  revealed: boolean;
   total: number;
   rows: ComparisonRow[];
 }

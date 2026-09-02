@@ -22,7 +22,8 @@ export default function Waiting() {
         .then((c) => {
           if (!alive) return;
           setCmp(c);
-          if (c.bothComplete) navigate('/results', { replace: true });
+          if (c.revealed) navigate('/results', { replace: true });
+          else if (c.bothComplete) navigate('/preview', { replace: true });
         })
         .catch(() => {});
     tick();
