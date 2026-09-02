@@ -25,6 +25,13 @@ export const api = {
       body: JSON.stringify({ dataUrl }),
     }).then(json<User>),
 
+  setName: (slug: string, displayName: string) =>
+    fetch(`/api/users/${slug}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ displayName }),
+    }).then(json<User>),
+
   categories: () => fetch('/api/categories').then(json<CategoryWithOptions[]>),
 
   choices: (slug: string) =>

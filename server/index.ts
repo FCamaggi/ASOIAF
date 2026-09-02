@@ -56,6 +56,17 @@ app.get('/api/health', async () => ({ ok: true, seeded: db.catalogue.categories.
 
 app.get('/api/users', async () => USER_SLUGS.map((s) => db.users[s]).filter(Boolean));
 
+app.put('/api/users/:slug', async (req, reply) => {
+  const { slug } = req.params as { slug: string };
+  if (!isUser(slug) || !db.users[slug]) return reply.code(404).send({ error: 'unknown user' });
+  const { displayName } = (req.body ?? {}) as { displayName?: string };
+  const name = typeof displayName === 'string' ? displayName.trim().slice(0, 24) : '';
+  if (!name) return reply.code(400).send({ error: 'displayName required' });
+  db.users[slug].displayName = name;
+  save(db);
+  return db.users[slug];
+});
+
 app.post('/api/users/:slug/photo', async (req, reply) => {
   const { slug } = req.params as { slug: string };
   if (!isUser(slug) || !db.users[slug]) return reply.code(404).send({ error: 'unknown user' });

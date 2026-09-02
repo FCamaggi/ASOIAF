@@ -55,7 +55,8 @@ for (const u of users) {
   const prev = db.users[u.slug];
   db.users[u.slug] = {
     slug: u.slug,
-    displayName: u.displayName,
+    // name & photo are user-owned once set — seed only provides the initial value
+    displayName: prev?.displayName ?? u.displayName,
     house: u.house,
     photoUrl: prev?.photoUrl ?? null,
   };

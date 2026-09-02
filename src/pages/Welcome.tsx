@@ -34,6 +34,17 @@ export default function Welcome() {
     }
   }
 
+  async function saveName(slug: PlayerSlug, name: string) {
+    const trimmed = name.trim().slice(0, 24);
+    if (!trimmed) return;
+    try {
+      const updated = await api.setName(slug, trimmed);
+      setUsers((prev) => prev.map((u) => (u.slug === slug ? updated : u)));
+    } catch (e: any) {
+      setError(e.message ?? 'Rename failed');
+    }
+  }
+
   async function reset() {
     if (!player || !window.confirm(t.resetConfirm)) return;
     setBusy(player);
@@ -67,6 +78,7 @@ export default function Welcome() {
             uploadLabel={u.photoUrl ? t.changePhoto : t.uploadPhoto}
             onChoose={() => setPlayer(u.slug as PlayerSlug)}
             onPickFile={(f) => setCropFor({ slug: u.slug as PlayerSlug, file: f })}
+            onRename={(name) => saveName(u.slug as PlayerSlug, name)}
           />
         ))}
       </div>
@@ -127,6 +139,7 @@ function PlayerPick({
   uploadLabel,
   onChoose,
   onPickFile,
+  onRename,
 }: {
   user: User;
   active: boolean;
@@ -134,8 +147,17 @@ function PlayerPick({
   uploadLabel: string;
   onChoose: () => void;
   onPickFile: (f: File) => void;
+  onRename: (name: string) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(user.displayName);
+
+  const commit = () => {
+    setEditing(false);
+    if (draft.trim() && draft.trim() !== user.displayName) onRename(draft.trim());
+    else setDraft(user.displayName);
+  };
 
   return (
     <div
@@ -173,9 +195,37 @@ function PlayerPick({
         />
       </div>
 
-      <div className="text-center">
-        <p className="font-serif text-[19px] font-semibold text-on-surface">{user.displayName}</p>
-        <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/60">
+      <div className="w-full text-center" onClick={(e) => e.stopPropagation()}>
+        {editing ? (
+          <input
+            autoFocus
+            value={draft}
+            maxLength={24}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commit();
+              if (e.key === 'Escape') {
+                setDraft(user.displayName);
+                setEditing(false);
+              }
+            }}
+            className="w-full rounded border border-primary/50 bg-surface-container-low px-2 py-1 text-center font-serif text-[17px] font-semibold text-on-surface outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(user.displayName);
+              setEditing(true);
+            }}
+            className="mx-auto flex items-center gap-1 font-serif text-[19px] font-semibold text-on-surface"
+          >
+            {user.displayName}
+            <span className="material-symbols-outlined text-[14px] text-on-surface-variant/50">edit</span>
+          </button>
+        )}
+        <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/60">
           {uploadLabel}
         </p>
       </div>
