@@ -129,9 +129,11 @@ function PlayerCell({
         </div>
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-obsidian-black/90 via-obsidian-black/10 to-transparent" />
+      {/* darken top & bottom, keep the mid clear so the centre chip reads */}
+      <div className="absolute inset-x-0 top-0 h-2/3 bg-gradient-to-b from-obsidian-black/90 to-transparent" />
 
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 p-2">
+      {/* name pinned to the TOP of the cell, away from the centre category chip */}
+      <div className="absolute inset-x-0 top-0 flex flex-col items-center gap-0.5 px-2 pt-7">
         <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-primary/90">
           Player {side}
         </span>
