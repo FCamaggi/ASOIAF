@@ -92,6 +92,12 @@ type Dict = {
   previewSubtitleWaiting: string;
   opponentSealed: string;
   downloadMine: string;
+  cropTitle: string;
+  cropHint: string;
+  cropCancel: string;
+  cropUse: string;
+  resetProgress: string;
+  resetConfirm: string;
 };
 
 export const TXT: Record<Lang, Dict> = {
@@ -158,6 +164,12 @@ export const TXT: Record<Lang, Dict> = {
     previewSubtitleWaiting: "Only your picks. The opponent's stay sealed.",
     opponentSealed: 'Sealed',
     downloadMine: 'Download my side',
+    cropTitle: 'Frame your photo',
+    cropHint: 'Drag to move · slider to zoom',
+    cropCancel: 'Cancel',
+    cropUse: 'Use photo',
+    resetProgress: 'Reset my progress',
+    resetConfirm: 'Delete all your picks and images? This cannot be undone.',
   },
   es: {
     navHome: 'Inicio',
@@ -222,6 +234,12 @@ export const TXT: Record<Lang, Dict> = {
     previewSubtitleWaiting: 'Solo tus elecciones. Las del otro quedan selladas.',
     opponentSealed: 'Sellado',
     downloadMine: 'Descargar mi lado',
+    cropTitle: 'Encuadrá tu foto',
+    cropHint: 'Arrastrá para mover · slider para zoom',
+    cropCancel: 'Cancelar',
+    cropUse: 'Usar foto',
+    resetProgress: 'Reiniciar mi progreso',
+    resetConfirm: '¿Borrar todas tus elecciones e imágenes? No se puede deshacer.',
   },
 };
 

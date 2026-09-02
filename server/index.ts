@@ -138,6 +138,17 @@ app.put('/api/users/:slug/choices/:categorySlug', async (req, reply) => {
   };
 });
 
+app.delete('/api/users/:slug/choices', async (req, reply) => {
+  const { slug } = req.params as { slug: string };
+  if (!isUser(slug)) return reply.code(404).send({ error: 'unknown user' });
+  for (const catSlug of Object.keys(db.choices[slug] ?? {})) {
+    removeByPrefix(slugToken('pick', slug, catSlug));
+  }
+  db.choices[slug] = {};
+  save(db);
+  return { ok: true };
+});
+
 app.post('/api/users/:slug/choices/:categorySlug/image', async (req, reply) => {
   const { slug, categorySlug } = req.params as { slug: string; categorySlug: string };
   if (!isUser(slug)) return reply.code(404).send({ error: 'unknown user' });

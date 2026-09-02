@@ -6,13 +6,14 @@ import { setPlayer, usePlayer, type PlayerSlug } from '../store.ts';
 import { useT } from '../lib/i18n.ts';
 import AppShell from '../components/AppShell.tsx';
 import PlayerAvatar from '../components/PlayerAvatar.tsx';
-import { fileToAvatarDataUrl } from '../lib/image.ts';
+import PhotoCrop from '../components/PhotoCrop.tsx';
 
 export default function Welcome() {
   const [users, setUsers] = useState<User[]>([]);
   const [player] = usePlayer();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cropFor, setCropFor] = useState<{ slug: PlayerSlug; file: File } | null>(null);
   const t = useT();
   const navigate = useNavigate();
 
@@ -20,15 +21,26 @@ export default function Welcome() {
     api.users().then(setUsers).catch((e) => setError(String(e.message ?? e)));
   }, []);
 
-  async function upload(slug: PlayerSlug, file: File) {
+  async function savePhoto(slug: PlayerSlug, dataUrl: string | null) {
     setBusy(slug);
     setError(null);
     try {
-      const dataUrl = await fileToAvatarDataUrl(file);
       const updated = await api.setPhoto(slug, dataUrl);
       setUsers((prev) => prev.map((u) => (u.slug === slug ? updated : u)));
     } catch (e: any) {
       setError(e.message ?? 'Upload failed');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function reset() {
+    if (!player || !window.confirm(t.resetConfirm)) return;
+    setBusy(player);
+    try {
+      await api.resetChoices(player);
+    } catch (e: any) {
+      setError(e.message ?? 'Reset failed');
     } finally {
       setBusy(null);
     }
@@ -54,7 +66,7 @@ export default function Welcome() {
             busy={busy === u.slug}
             uploadLabel={u.photoUrl ? t.changePhoto : t.uploadPhoto}
             onChoose={() => setPlayer(u.slug as PlayerSlug)}
-            onUpload={(f) => upload(u.slug as PlayerSlug, f)}
+            onPickFile={(f) => setCropFor({ slug: u.slug as PlayerSlug, file: f })}
           />
         ))}
       </div>
@@ -75,6 +87,35 @@ export default function Welcome() {
         {t.begin}
         <span className="material-symbols-outlined text-[16px]">chevron_right</span>
       </button>
+
+      {player && (
+        <button
+          type="button"
+          onClick={reset}
+          className="mx-auto mt-stack-md flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-on-surface-variant/50 hover:text-error"
+        >
+          <span className="material-symbols-outlined text-[14px]">restart_alt</span>
+          {t.resetProgress}
+        </button>
+      )}
+
+      {cropFor && (
+        <PhotoCrop
+          file={cropFor.file}
+          labels={{
+            title: t.cropTitle,
+            hint: t.cropHint,
+            cancel: t.cropCancel,
+            use: t.cropUse,
+          }}
+          onCancel={() => setCropFor(null)}
+          onDone={(dataUrl) => {
+            const slug = cropFor.slug;
+            setCropFor(null);
+            savePhoto(slug, dataUrl);
+          }}
+        />
+      )}
     </AppShell>
   );
 }
@@ -85,14 +126,14 @@ function PlayerPick({
   busy,
   uploadLabel,
   onChoose,
-  onUpload,
+  onPickFile,
 }: {
   user: User;
   active: boolean;
   busy: boolean;
   uploadLabel: string;
   onChoose: () => void;
-  onUpload: (f: File) => void;
+  onPickFile: (f: File) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -126,7 +167,7 @@ function PlayerPick({
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) onUpload(f);
+            if (f) onPickFile(f);
             e.target.value = '';
           }}
         />

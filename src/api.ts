@@ -49,6 +49,9 @@ export const api = {
       json<{ user: User; total: number; answered: number; rows: PreviewRow[] }>,
     ),
 
+  resetChoices: (slug: string) =>
+    fetch(`/api/users/${slug}/choices`, { method: 'DELETE' }).then(json<{ ok: true }>),
+
   setChoiceImage: (slug: string, categorySlug: string, dataUrl: string | null) =>
     fetch(`/api/users/${slug}/choices/${categorySlug}/image`, {
       method: 'POST',

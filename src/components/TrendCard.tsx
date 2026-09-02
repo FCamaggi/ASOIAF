@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import type { ComparisonRow, User } from '../../shared/types.ts';
+import { houseStyle, initials } from '../lib/houses.ts';
 import OptionArt from './OptionArt.tsx';
-import PlayerAvatar from './PlayerAvatar.tsx';
 
 interface Props {
   row: ComparisonRow;
@@ -105,15 +105,40 @@ function PlayerCell({
   sealed?: boolean;
   sealedText?: string;
 }) {
+  const style = houseStyle(user.house);
   return (
-    <div className="relative flex flex-col items-center justify-center gap-2 border-b border-valyrian-steel/15 bg-surface-container-low/60 p-3">
-      <PlayerAvatar user={user} size={68} />
-      <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-primary/80">
-        Player {side}
-      </span>
-      <span className="text-center font-serif text-[14px] leading-tight text-on-surface">
-        {sealed ? sealedText : user.displayName}
-      </span>
+    <div className="relative overflow-hidden border-b border-valyrian-steel/15">
+      {user.photoUrl && !sealed ? (
+        <img
+          src={user.photoUrl}
+          alt={user.displayName}
+          crossOrigin="anonymous"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      ) : (
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ background: `radial-gradient(circle at 30% 25%, ${style.deep}, #0e0e0e)` }}
+        >
+          <span
+            className="font-serif text-[2.6rem] font-semibold"
+            style={{ color: style.accent, opacity: sealed ? 0.15 : 1 }}
+          >
+            {sealed ? '?' : initials(user.displayName)}
+          </span>
+        </div>
+      )}
+
+      <div className="absolute inset-0 bg-gradient-to-t from-obsidian-black/90 via-obsidian-black/10 to-transparent" />
+
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-0.5 p-2">
+        <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-primary/90">
+          Player {side}
+        </span>
+        <span className="text-center font-serif text-[13px] leading-tight text-on-surface">
+          {sealed ? sealedText : user.displayName}
+        </span>
+      </div>
     </div>
   );
 }
