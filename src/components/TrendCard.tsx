@@ -169,9 +169,9 @@ function ChoiceCell({
 }) {
   return (
     <div className="relative overflow-hidden border-t border-valyrian-steel/15">
-      {art ? (
+      {imageUrl || art || name !== '—' ? (
         <OptionArt
-          option={art}
+          option={art ?? { name, house: null, type: 'moment' as const }}
           imageUrl={imageUrl}
           className="absolute inset-0 h-full w-full"
           compact
